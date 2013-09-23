@@ -88,6 +88,10 @@ int main()
 	init_cache(CACHED_BLOCKS);
 	
 	/* Test case 1: read/write block */
+printf("\n+++++++++++++++++++++++++++++\n");
+printf("++++++++ Test case 1 ++++++++\n");
+printf("+++++++++++++++++++++++++++++\n");
+
 	size = BLOCK_SIZE;
 	memset(buffer, 0, size);
 	strcpy(buffer, "hello world\n");
@@ -96,36 +100,55 @@ int main()
 	mydisk_read_block(0, buffer2);
 	check_test(memcmp(buffer2, "hello world\n", 13));
 
-	// /* Test case 2: basic read/write */
-	// memset(buffer, 0, size);
-	// mydisk_read(0, 13, buffer);
-	// check_test(memcmp(buffer, "hello world\n", 13));
+	/* Test case 2: basic read/write */
+printf("\n+++++++++++++++++++++++++++++\n");
+printf("++++++++ Test case 2 ++++++++\n");
+printf("+++++++++++++++++++++++++++++\n");
 
-	// /* Test case 3: read in the middle */
-	// memset(buffer, 0, BLOCK_SIZE);
-	// mydisk_read(8, 5, buffer);
-	// check_test(memcmp(buffer, "rld\n", 5));
+	memset(buffer, 0, size);
+	mydisk_read(0, 13, buffer);
+	check_test(memcmp(buffer, "hello world\n", 13));
 
-	// /* Test case 4: read/write across blocks */
-	// size = BLOCK_SIZE;
-	// rand_str(buffer, size);
-	// mydisk_write(144, size, buffer);
-	// memset(buffer2, 0, size);
-	// mydisk_read(144, size, buffer2);
-	// check_test(memcmp(buffer, buffer2, size));
+	/* Test case 3: read in the middle */
+printf("\n+++++++++++++++++++++++++++++\n");
+printf("++++++++ Test case 3 ++++++++\n");
+printf("+++++++++++++++++++++++++++++\n");
 
-	// /* Test case 5: large read/write */
-	// size = BLOCK_SIZE * (MAX_BLOCKS - 1);
-	// rand_str(buffer, size);
-	// mydisk_write(276, size, buffer);
-	// mydisk_read(276, size, buffer2);
-	// check_test(memcmp(buffer, buffer2, size));
+	memset(buffer, 0, BLOCK_SIZE);
+	mydisk_read(8, 5, buffer);
+	check_test(memcmp(buffer, "rld\n", 5));
 
-	// /* Test case 6~9: read/write exception */
-	// check_test(!mydisk_read(-1, 0, buffer));
-	// check_test(!mydisk_read(0, -10, buffer));
-	// check_test(!mydisk_read(100, BLOCK_SIZE * MAX_BLOCKS, buffer));
-	// check_test(mydisk_write(0, 0, buffer));
+	/* Test case 4: read/write across blocks */
+printf("\n+++++++++++++++++++++++++++++\n");
+printf("++++++++ Test case 4 ++++++++\n");
+printf("+++++++++++++++++++++++++++++\n");
+
+	size = BLOCK_SIZE;
+	rand_str(buffer, size);
+	mydisk_write(144, size, buffer);
+	memset(buffer2, 0, size);
+	mydisk_read(144, size, buffer2);
+	check_test(memcmp(buffer, buffer2, size));
+
+	/* Test case 5: large read/write */
+printf("\n+++++++++++++++++++++++++++++\n");
+printf("++++++++ Test case 5 ++++++++\n");
+printf("+++++++++++++++++++++++++++++\n");
+
+	size = BLOCK_SIZE * (MAX_BLOCKS - 1);
+	rand_str(buffer, size);
+	mydisk_write(276, size, buffer);
+	mydisk_read(276, size, buffer2);
+	check_test(memcmp(buffer, buffer2, size));
+
+	/* Test case 6~9: read/write exception */
+printf("\n+++++++++++++++++++++++++++++\n");
+printf("++++++++ Test case 6-9 ++++++++\n");
+printf("+++++++++++++++++++++++++++++\n");	
+	check_test(!mydisk_read(-1, 0, buffer));
+	check_test(!mydisk_read(0, -10, buffer));
+	check_test(!mydisk_read(100, BLOCK_SIZE * MAX_BLOCKS, buffer));
+	check_test(mydisk_write(0, 0, buffer));
 
 	// check_test(stress_test());
 	// check_test(stress_test2());

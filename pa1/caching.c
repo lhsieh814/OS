@@ -11,6 +11,9 @@ struct cache_entry
 	char content[BLOCK_SIZE];
 };
 
+struct cache_entry *ring_buffer;
+struct cache_entry *p;
+
 int cache_blocks;  /* number of blocks for the cache buffer */
 
 /* TODO: some helper functions e.g. find_cached_entry(block_id) */
@@ -25,7 +28,9 @@ int init_cache(int nblocks)
 	 printf("cache_blocks = %d\n", nblocks);
 	 cache_blocks = nblocks;
 
-	 
+	ring_buffer = malloc(cache_blocks * sizeof(struct cache_entry));	 
+	p = malloc(sizeof(struct cache_entry));
+	p = ring_buffer;
 
 	return 0;
 }
@@ -33,6 +38,8 @@ int init_cache(int nblocks)
 int close_cache()
 {
 	/* TODO: release the memory for the ring buffer */
+
+	free(ring_buffer);
 	return 0;
 }
 
@@ -41,6 +48,14 @@ void *get_cached_block(int block_id)
 	/* TODO: find the entry, return the content 
 	 * or return NULL if nut found 
 	 */
+	int i;
+	for (i=0; i<cache_blocks; i++) {
+		if (ring_buffer[i].block_id == block_id) {
+			printf("Found entry in the cache");
+			return ring_buffer[i].content;
+		}
+	}
+
 	return NULL;
 }
 
@@ -52,6 +67,12 @@ void *create_cached_block(int block_id)
 	 * Note that: think if you can use mydisk_write_block() to 
 	 * flush dirty blocks to disk
 	 */
+	struct cache_entry *tmp = malloc(sizeof(struct cache_entry));
+	*tmp->block_id = block_id;
+	*tmp->is_dirty = 0;
+
+	p++;
+
 	return NULL;
 }
 
