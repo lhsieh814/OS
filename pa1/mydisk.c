@@ -66,15 +66,17 @@ int mydisk_read_block(int block_id, void *buffer)
 		printf("cache enabled\n");
 		int i;
 		char tmp[BLOCK_SIZE];
-		void *x = (void*)tmp;
-		x = get_cached_block(block_id);
+		char *x;
+		x = &tmp;
+		*x = get_cached_block(block_id);
+		printf("Hello\n");
 		for(i=0; i<BLOCK_SIZE; i++) {
-			printf("%c",((char*)x)[i]);
+			printf("%c",tmp[i]);
 		}
 		printf("\n");
-		if (x==NULL) {
+		if (*x==NULL) {
 			printf("Cache returned a NULL pointer\n");
-			x = create_cached_block(block_id);
+			*x = create_cached_block(block_id);
 			printf("here\n");
 			for(i=0; i<BLOCK_SIZE; i++) {
 				printf("%c", ((char*)x)[i]);

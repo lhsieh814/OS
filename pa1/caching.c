@@ -42,10 +42,12 @@ int init_cache(int nblocks)
 
 	int i;
 	for (i=0; i<cache_blocks; i++) {
-		ring_buffer[i] = malloc(sizeof(struct cache_entry*));
+		ring_buffer[i] = malloc(sizeof(struct cache_entry));
 		ring_buffer[i]->block_id = -1;
 		ring_buffer[i]->is_dirty = 0;
 	}	 
+
+	p = *ring_buffer;
 
 	return 0;
 }
@@ -82,6 +84,7 @@ void *create_cached_block(int block_id)
 	 * Note that: think if you can use mydisk_write_block() to 
 	 * flush dirty blocks to disk
 	 */
+	printf("create_cached_block()\n");
 	if(p->block_id == -1) {
 		//Found an empty entry
 		printf("Found an empty entry\n");
