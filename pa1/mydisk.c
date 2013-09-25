@@ -11,7 +11,6 @@ int mydisk_init(char const *file_name, int nblocks, int type)
 	/* TODO: 1. use the proper mode to open the disk file
 	 * 2. fill zeros 
 	 */
-	printf("Starting ... \n");
 	thefile = fopen(file_name, "r+");
 
 	//TODO: check that the parameters are correct, otherwise return 1
@@ -50,8 +49,8 @@ void mydisk_close()
 
 int mydisk_read_block(int block_id, void *buffer)
 {
-	printf("\n*** Start read block ***\n");
-	printf("block id = %d\n", block_id);
+	// printf("\n*** Start read block ***\n");
+	// printf("block id = %d\n", block_id);
 
 	if (block_id >= max_blocks) {
 		printf("ERROR: block id greater than max blocks");
@@ -64,9 +63,28 @@ int mydisk_read_block(int block_id, void *buffer)
 		 * 3. fill the requested buffer with the data in the entry 
 		 * 4. return proper return code
 		 */
-		 printf("cache enabled");
-		 
-		return 0;
+		printf("cache enabled\n");
+		int i;
+		char tmp[BLOCK_SIZE];
+		void *x = (void*)tmp;
+		x = get_cached_block(block_id);
+		for(i=0; i<BLOCK_SIZE; i++) {
+			printf("%c",((char*)x)[i]);
+		}
+		printf("\n");
+		if (x==NULL) {
+			printf("Cache returned a NULL pointer\n");
+			x = create_cached_block(block_id);
+			printf("here\n");
+			for(i=0; i<BLOCK_SIZE; i++) {
+				printf("%c", ((char*)x)[i]);
+			}
+			fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
+			fread(buffer, BLOCK_SIZE, 1, thefile);
+
+		} else {
+			printf("skipped the if\n");
+		}
 	} else {
 		/* TODO: use standard C functiosn to read from disk
 		 */
@@ -74,15 +92,15 @@ int mydisk_read_block(int block_id, void *buffer)
 		fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
 		fread(buffer, BLOCK_SIZE, 1, thefile);
 
-		int i;
-		for(i=0; i<BLOCK_SIZE; i++) {
-			printf("%c", ((char*)buffer)[i]);
-			if(i%BLOCK_SIZE == 0 && i!=0) {
-				printf("\n");
-			}
-		}
+		// int i;
+		// for(i=0; i<BLOCK_SIZE; i++) {
+		// 	printf("%c", ((char*)buffer)[i]);
+		// 	if(i%BLOCK_SIZE == 0 && i!=0) {
+		// 		printf("\n");
+		// 	}
+		// }
 
-		printf("\n*** End read block ***\n");
+		// printf("\n*** End read block ***\n");
 		return 0;
 	}
 }
@@ -92,8 +110,8 @@ int mydisk_write_block(int block_id, void *buffer)
 	/* TODO: this one is similar to read_block() except that
 	 * you need to mark it dirty
 	 */
-	printf("\n--- Start write block ---\n");
-	printf("block id = %d\n", block_id);
+	// printf("\n--- Start write block ---\n");
+	// printf("block id = %d\n", block_id);
 
 	int i;
 	char ch;
@@ -106,17 +124,17 @@ int mydisk_write_block(int block_id, void *buffer)
 
 	}
 
-	fseek(thefile, 0, SEEK_SET);
-	i = 0;
-	while( ( ch = fgetc(thefile) ) != EOF ) {
-    	printf("%c",ch);
-    	if (i % BLOCK_SIZE == 0 && (i!=0)) {
-    		printf("\n");
-    	}
-    	i++;
-  	}
+	// fseek(thefile, 0, SEEK_SET);
+	// i = 0;
+	// while( ( ch = fgetc(thefile) ) != EOF ) {
+ //    	printf("%c",ch);
+ //    	if (i % BLOCK_SIZE == 0 && (i!=0)) {
+ //    		printf("\n");
+ //    	}
+ //    	i++;
+ //  	}
 
-	printf("\n--- End write block ---\n");
+	// printf("\n--- End write block ---\n");
 	return 0;
 }
 
@@ -136,7 +154,7 @@ int mydisk_read(int start_address, int nbytes, void *buffer)
 	 * in terms of latency calculation, monitor if cache hit/miss
 	 * for each block access
 	 */
-	printf("\n### Start read ###\n");
+	// printf("\n### Start read ###\n");
 
 	if ( !(start_address >= 0) || 
 		!(start_address <= (start_address + nbytes)) ||
@@ -148,7 +166,7 @@ int mydisk_read(int start_address, int nbytes, void *buffer)
 	char tmp[BLOCK_SIZE];
 	int start_block = start_address / BLOCK_SIZE;
 	int end_block = (start_address + nbytes) / BLOCK_SIZE;
-	printf("start_block = %d\nend_block = %d\n", start_block, end_block);
+	// printf("start_block = %d\nend_block = %d\n", start_block, end_block);
 
 	remaining = nbytes;
 	offset = start_address % BLOCK_SIZE;
@@ -171,10 +189,10 @@ int mydisk_read(int start_address, int nbytes, void *buffer)
 	 	} else {
 	 		amount = BLOCK_SIZE;
 	 	}
-	 	printf("remaining = %d , offset = %d , amount = %d\n", remaining, offset, amount);
+	 	// printf("remaining = %d , offset = %d , amount = %d\n", remaining, offset, amount);
 	}
 
-	printf("### End read ###\n");
+	// printf("### End read ###\n");
 	return 0;
 }
 
@@ -184,7 +202,7 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 	 * When a block is modified partially, you need to first read the block,
 	 * modify the portion and then write the whole block back
 	 */
-	printf("\n$$$ Start write $$$\n");
+	// printf("\n$$$ Start write $$$\n");
 
 	int offset, remaining, amount, block_id;
 
@@ -197,7 +215,7 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 	char tmp[BLOCK_SIZE];
 	int start_block = start_address / BLOCK_SIZE;
 	int end_block = (start_address + nbytes) / BLOCK_SIZE;
-	printf("start_block = %d\nend_block = %d\n", start_block, end_block);
+	// printf("start_block = %d\nend_block = %d\n", start_block, end_block);
 
 	remaining = nbytes;
 	offset = start_address % BLOCK_SIZE;
@@ -206,24 +224,24 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 	} else {
  		amount = BLOCK_SIZE - offset;
 	}
-	printf("OLD -> remaining = %d , offset = %d , amount = %d \n", remaining, offset, amount);
+	// printf("OLD -> remaining = %d , offset = %d , amount = %d \n", remaining, offset, amount);
 
 	int i;
 	for (i=start_block; i<=end_block; i++) {
 		mydisk_read_block(i, tmp);
 
-		printf("tmp + %d\n", offset);
-		printf("buffer + %d\n", (nbytes - remaining));
-		printf("amount = %d\n", amount);
+		// printf("tmp + %d\n", offset);
+		// printf("buffer + %d\n", (nbytes - remaining));
+		// printf("amount = %d\n", amount);
 		memcpy(tmp + offset, buffer + (nbytes - remaining), amount);
 
-		printf("buffer[nbytes-remaining] = %c\n", ((char*)buffer)[nbytes-remaining]);
-		printf("Need to write this in the new block : \n");
-		int j;
-		for(j=0; j< 512; j++) {
-			printf("%c", tmp[j]);
-		}
-		printf("\n");
+		// printf("buffer[nbytes-remaining] = %c\n", ((char*)buffer)[nbytes-remaining]);
+		// printf("Need to write this in the new block : \n");
+		// int j;
+		// for(j=0; j< 512; j++) {
+		// 	printf("%c", tmp[j]);
+		// }
+		// printf("\n");
 
 		mydisk_write_block(i, tmp);
 
@@ -234,11 +252,11 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 	 	} else {
 	 		amount = BLOCK_SIZE;
 	 	}
-	 	printf("NEW -> remaining = %d , offset = %d , amount = %d \n", remaining, offset, amount);
+	 	// printf("NEW -> remaining = %d , offset = %d , amount = %d \n", remaining, offset, amount);
 
 	}
 
 
-	printf("$$$ End write $$$\n");
+	// printf("$$$ End write $$$\n");
 	return 0;
 }
