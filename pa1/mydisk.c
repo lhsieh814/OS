@@ -65,26 +65,20 @@ int mydisk_read_block(int block_id, void *buffer)
 		 */
 		printf("cache enabled for read\n");
 		int i;
-		// char tmp[BLOCK_SIZE];
-		// char *x;
-		// x = &tmp;
-		char *x = malloc(BLOCK_SIZE);
 
-		*x = get_cached_block(block_id);
-		for(i=0; i<BLOCK_SIZE; i++) {
-			printf("%c",x[i]);
-		}
-		printf("\n");
+		char *x = get_cached_block(block_id);
+
 		if (*x == NULL) {
-			printf("Cache returned a NULL pointer\n");
+			printf("Cache miss\n");
 			*x = create_cached_block(block_id);
-			for(i=0; i<BLOCK_SIZE; i++) {
+			for (i=0; i<BLOCK_SIZE; i++) {
 				printf("%c", ((char*)x)[i]);
 			}
 			printf("\n");
 
 			fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
 			fread(buffer, BLOCK_SIZE, 1, thefile);
+			memcpy(x, buffer, BLOCK_SIZE);
 
 			// Cache miss
 			return 0;
@@ -147,26 +141,19 @@ int mydisk_write_block(int block_id, void *buffer)
 
 		if (*y == NULL) {
 			printf("cache miss for write\n");
-			*y = create_cached_block(block_id);
+			
 			mark_dirty(block_id);
-			printf("Outside : %d\n", &y);
-			printf("x : %c\n", &y);
-			for(i=0; i<BLOCK_SIZE; i++) {
-				printf("%c",y[i]);
-			}
-			printf("\n");
-			printf("buffer : \n");
-			for(i=0; i<BLOCK_SIZE; i++) {
-				printf("%c",((char*)buffer)[i]);
-			}
-			printf("\n");
-			memcpy(y, buffer, BLOCK_SIZE);
-			print_array(y);
+			memcpy(create_cached_block(block_id), buffer, BLOCK_SIZE);
+printf("_______________\n");
+char *z = get_cached_block(block_id);
+for(i=0; i<BLOCK_SIZE; i++) {
+	printf("%c", z[i]);
+}
+printf("________________\n");
 			return 0;
 		} else {
 			printf("cache hit for write\n");
 			memcpy(y, buffer, BLOCK_SIZE);
-			print_array(y);
 			return -1;
 		}
 
@@ -320,12 +307,3 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 	return 0;
 }
 
-void print_array(char * x)
-{
-	printf("%c\n", &x);
-	int i;
-	for(i=0;i<BLOCK_SIZE;i++) {
-		printf("%c", x[i]);
-	}
-	printf("\n");
-}

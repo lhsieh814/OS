@@ -39,15 +39,13 @@ int init_cache(int nblocks)
 	cache_blocks = nblocks;
 
 	// Allocate and initialize the ring buffer
-	ring_buffer = malloc(cache_blocks * sizeof(struct cache_entry));
+	ring_buffer = malloc(cache_blocks * sizeof(struct cache_entry *));
 
 	int i;
 	for (i=0; i<cache_blocks; i++) {
 		ring_buffer[i] = malloc(sizeof(struct cache_entry));
 		ring_buffer[i]->block_id = -1;
 		ring_buffer[i]->is_dirty = 0;
-		char char_array[BLOCK_SIZE] = {'a', 'b', 'c'};
-		*(ring_buffer[i]->content) = char_array;
 	}	 
 
 	// Pointer p points to the first entry in the ring_buffer
@@ -59,12 +57,13 @@ int init_cache(int nblocks)
 int close_cache()
 {
 	/* TODO: release the memory for the ring buffer */
-	//flush
 	int i;
 	for (i=0; i<cache_blocks; i++) {
 		if (ring_buffer[i]->is_dirty == 1) {
+			// flush cache
 			mydisk_write_block(ring_buffer[i]->block_id, ring_buffer[i]->content);
 		}
+		free(ring_buffer[i]);
 	}
 	free(ring_buffer);
 	return 0;
@@ -93,27 +92,27 @@ void *create_cached_block(int block_id)
 	 * Note that: think if you can use mydisk_write_block() to 
 	 * flush dirty blocks to disk
 	 */
-	void *content;
-	if(p->block_id == -1) {
+	char *tmp;
+
+	if (p->block_id == -1) {
 		//Found an empty entry
 		printf("create_cached_block() : Found an empty entry\n");
 		p -> block_id = block_id;
 		p -> is_dirty = 0;
-		content = (*p).content;
-		printf("Inside : %d\n",&(*p).content);
+		tmp = p->content;
 		p++;
-		return content;
+		return tmp;
 	} else {
 		if (p->is_dirty == 1) {
 			printf("create_cached_block() : Write back the dirty block back to disk\n");
 			mydisk_write_block(block_id, *(p->content));
-			content = &(*p).content;
+			tmp = p->content;
 			p++;
-			return content;
+			return tmp;
+		} else {
+			printf("create_cached_block() : Not dirty\n");
 		}
 	}
-
-	p++;
 
 	return NULL;
 }
