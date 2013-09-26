@@ -49,7 +49,7 @@ void mydisk_close()
 
 int mydisk_read_block(int block_id, void *buffer)
 {
-	// printf("\n*** Start read block ***\n");
+	printf("\n*** Start read block ***\n");
 	// printf("block id = %d\n", block_id);
 
 	if (block_id >= max_blocks) {
@@ -63,29 +63,40 @@ int mydisk_read_block(int block_id, void *buffer)
 		 * 3. fill the requested buffer with the data in the entry 
 		 * 4. return proper return code
 		 */
-		printf("cache enabled\n");
+		printf("cache enabled for read\n");
 		int i;
-		char tmp[BLOCK_SIZE];
-		char *x;
-		x = &tmp;
+		// char tmp[BLOCK_SIZE];
+		// char *x;
+		// x = &tmp;
+		char *x = malloc(BLOCK_SIZE);
+
 		*x = get_cached_block(block_id);
-		printf("Hello\n");
 		for(i=0; i<BLOCK_SIZE; i++) {
-			printf("%c",tmp[i]);
+			printf("%c",x[i]);
 		}
 		printf("\n");
-		if (*x==NULL) {
+		if (*x == NULL) {
 			printf("Cache returned a NULL pointer\n");
 			*x = create_cached_block(block_id);
-			printf("here\n");
 			for(i=0; i<BLOCK_SIZE; i++) {
 				printf("%c", ((char*)x)[i]);
 			}
+			printf("\n");
+
 			fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
 			fread(buffer, BLOCK_SIZE, 1, thefile);
 
+			// Cache miss
+			return 0;
 		} else {
-			printf("skipped the if\n");
+			printf("Cache hit\n");
+			for(i=0;i<BLOCK_SIZE;i++){
+				printf("%c", x[i]);
+			}
+			printf("\n");
+			memcpy(buffer, x, BLOCK_SIZE);
+			// Cache hit
+			return -1;
 		}
 	} else {
 		/* TODO: use standard C functiosn to read from disk
@@ -112,20 +123,76 @@ int mydisk_write_block(int block_id, void *buffer)
 	/* TODO: this one is similar to read_block() except that
 	 * you need to mark it dirty
 	 */
-	// printf("\n--- Start write block ---\n");
+	printf("\n--- Start write block ---\n");
 	// printf("block id = %d\n", block_id);
-
-	int i;
-	char ch;
-
-	fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
-	if(fwrite(buffer, BLOCK_SIZE, 1, thefile) != 1) {
-		printf("ERROR\n");
+	
+	if (block_id >= max_blocks) {
+		printf("ERROR: block id greater than max blocks");
 		return 1;
-	} else {
-
 	}
 
+	if (cache_enabled) {
+		printf("cache enabled for write\n");
+		int i;
+		// char tmp[BLOCK_SIZE];
+		// char *x;
+		// x = &tmp;
+		char *x = malloc(BLOCK_SIZE);
+		print();
+		*x = get_cached_block(block_id);
+
+		if (*x == NULL) {
+			print();
+			printf("cache miss for write\n");
+			*x = create_cached_block(block_id);
+			mark_dirty(block_id);
+			printf("x : %c\n", &x);
+			for(i=0; i<BLOCK_SIZE; i++) {
+				printf("%c",x[i]);
+			}
+			printf("\n");
+			printf("buffer : \n");
+			for(i=0; i<BLOCK_SIZE; i++) {
+				printf("%c",((char*)buffer)[i]);
+			}
+			printf("\n");
+			memcpy(x, buffer, BLOCK_SIZE);
+			printf("start printing : %c\n", &x);
+			for(i=0;i<BLOCK_SIZE;i++) {
+				printf("%c", x[i]);
+			}
+			print();
+			strcpy(x, buffer);
+			printf("another way : %c\n", &x);
+			for(i=0;i<BLOCK_SIZE;i++) {
+				printf("%c", x[i]);
+			}
+			print();
+			return 0;
+		} else {
+			printf("cache hit for write\n");
+			memcpy(x, buffer, BLOCK_SIZE);
+			printf("x : \n");
+			for(i=0; i<BLOCK_SIZE; i++) {
+				printf("%c",x[i]);
+			}
+			printf("\n");
+			return -1;
+		}
+
+	} else {
+
+		int i;
+		char ch;
+
+		fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
+		if(fwrite(buffer, BLOCK_SIZE, 1, thefile) != 1) {
+			printf("ERROR\n");
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 	// fseek(thefile, 0, SEEK_SET);
 	// i = 0;
 	// while( ( ch = fgetc(thefile) ) != EOF ) {

@@ -97,13 +97,13 @@ printf("+++++++++++++++++++++++++++++\n");
 	strcpy(buffer, "hello world\n");
 	mydisk_write_block(0, buffer);
 	memset(buffer2, 0, size);
-	int j = mydisk_read_block(0, buffer2);
-	printf("Read this -> ");
-	int i;
-	for(i=0; i<size; i++){
-		printf("%c", buffer2[i]);
-	}
-	printf("\n");
+	mydisk_read_block(0, buffer2);
+printf("Read this -> ");
+int i;
+for(i=0; i<size; i++){
+	printf("%c", buffer2[i]);
+}
+printf("\n");
 	check_test(memcmp(buffer2, "hello world\n", 13));
 
 	/* Test case 2: basic read/write */
