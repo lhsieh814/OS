@@ -137,18 +137,22 @@ int mydisk_write_block(int block_id, void *buffer)
 		// char tmp[BLOCK_SIZE];
 		// char *x;
 		// x = &tmp;
-		char *x = malloc(BLOCK_SIZE);
-		print();
-		*x = get_cached_block(block_id);
 
-		if (*x == NULL) {
-			print();
+		// char *x = malloc(BLOCK_SIZE);
+		// print();
+		// *x = get_cached_block(block_id);
+
+		char *y[BLOCK_SIZE];
+		*y = get_cached_block(block_id);
+
+		if (*y == NULL) {
 			printf("cache miss for write\n");
-			*x = create_cached_block(block_id);
+			*y = create_cached_block(block_id);
 			mark_dirty(block_id);
-			printf("x : %c\n", &x);
+			printf("Outside : %d\n", &y);
+			printf("x : %c\n", &y);
 			for(i=0; i<BLOCK_SIZE; i++) {
-				printf("%c",x[i]);
+				printf("%c",y[i]);
 			}
 			printf("\n");
 			printf("buffer : \n");
@@ -156,27 +160,13 @@ int mydisk_write_block(int block_id, void *buffer)
 				printf("%c",((char*)buffer)[i]);
 			}
 			printf("\n");
-			memcpy(x, buffer, BLOCK_SIZE);
-			printf("start printing : %c\n", &x);
-			for(i=0;i<BLOCK_SIZE;i++) {
-				printf("%c", x[i]);
-			}
-			print();
-			strcpy(x, buffer);
-			printf("another way : %c\n", &x);
-			for(i=0;i<BLOCK_SIZE;i++) {
-				printf("%c", x[i]);
-			}
-			print();
+			memcpy(y, buffer, BLOCK_SIZE);
+			print_array(y);
 			return 0;
 		} else {
 			printf("cache hit for write\n");
-			memcpy(x, buffer, BLOCK_SIZE);
-			printf("x : \n");
-			for(i=0; i<BLOCK_SIZE; i++) {
-				printf("%c",x[i]);
-			}
-			printf("\n");
+			memcpy(y, buffer, BLOCK_SIZE);
+			print_array(y);
 			return -1;
 		}
 
@@ -328,4 +318,14 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 
 	// printf("$$$ End write $$$\n");
 	return 0;
+}
+
+void print_array(char * x)
+{
+	printf("%c\n", &x);
+	int i;
+	for(i=0;i<BLOCK_SIZE;i++) {
+		printf("%c", x[i]);
+	}
+	printf("\n");
 }
