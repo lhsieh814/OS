@@ -66,29 +66,33 @@ int mydisk_read_block(int block_id, void *buffer)
 		printf("cache enabled for read\n");
 		int i;
 
-		char *x = get_cached_block(block_id);
-
-		if (*x == NULL) {
+		// char *x = get_cached_block(block_id);
+		if (get_cached_block(block_id) == NULL) {
 			printf("Cache miss\n");
-			*x = create_cached_block(block_id);
-			for (i=0; i<BLOCK_SIZE; i++) {
-				printf("%c", ((char*)x)[i]);
-			}
-			printf("\n");
 
 			fseek(thefile, block_id * BLOCK_SIZE, SEEK_SET);
 			fread(buffer, BLOCK_SIZE, 1, thefile);
-			memcpy(x, buffer, BLOCK_SIZE);
-
+printf("before-->\n");
+print();
+			memcpy(create_cached_block(block_id), buffer, BLOCK_SIZE);
+printf("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
+print();
+// char *x = get_cached_block(block_id);
+// for (i=0; i<BLOCK_SIZE; i++) {
+// 	printf("%c", x[i]);
+// }
+// printf("\n");
 			// Cache miss
 			return 0;
 		} else {
 			printf("Cache hit\n");
-			for(i=0;i<BLOCK_SIZE;i++){
-				printf("%c", x[i]);
-			}
-			printf("\n");
-			memcpy(buffer, x, BLOCK_SIZE);
+char *x = get_cached_block(block_id);
+for(i=0;i<BLOCK_SIZE;i++){
+	printf("%c", x[i]);
+}
+printf("\n");
+			memcpy(buffer, get_cached_block(block_id), BLOCK_SIZE);
+
 			// Cache hit
 			return -1;
 		}
@@ -152,13 +156,21 @@ for(i=0; i<BLOCK_SIZE; i++) {
 printf("________________\n");
 			return 0;
 		} else {
+printf("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n");
 			printf("cache hit for write\n");
-			memcpy(y, buffer, BLOCK_SIZE);
+printf("+++++++++ write this ++++++++\n");
+for(i=0; i<BLOCK_SIZE; i++) {
+	printf("%c", ((char*)buffer)[i]);
+}
+printf("\n+++++++++++++++++\n");
+			memcpy(get_cached_block(block_id), buffer, BLOCK_SIZE);
+printf("_______ should be same as top ________\n");
+get_cached_block(block_id);
+printf("\n________________\n");
 			return -1;
 		}
 
 	} else {
-
 		int i;
 		char ch;
 
@@ -261,7 +273,7 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 	char tmp[BLOCK_SIZE];
 	int start_block = start_address / BLOCK_SIZE;
 	int end_block = (start_address + nbytes) / BLOCK_SIZE;
-	// printf("start_block = %d\nend_block = %d\n", start_block, end_block);
+	printf("start_block = %d\nend_block = %d\n", start_block, end_block);
 
 	remaining = nbytes;
 	offset = start_address % BLOCK_SIZE;
@@ -274,6 +286,7 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 
 	int i;
 	for (i=start_block; i<=end_block; i++) {
+		printf("round %d\n", i);
 		mydisk_read_block(i, tmp);
 
 		// printf("tmp + %d\n", offset);
@@ -281,13 +294,13 @@ int mydisk_write(int start_address, int nbytes, void *buffer)
 		// printf("amount = %d\n", amount);
 		memcpy(tmp + offset, buffer + (nbytes - remaining), amount);
 
-		// printf("buffer[nbytes-remaining] = %c\n", ((char*)buffer)[nbytes-remaining]);
-		// printf("Need to write this in the new block : \n");
-		// int j;
-		// for(j=0; j< 512; j++) {
-		// 	printf("%c", tmp[j]);
-		// }
-		// printf("\n");
+		printf("buffer[nbytes-remaining] = %c\n", ((char*)buffer)[nbytes-remaining]);
+		printf("Need to write this in the new block : \n");
+		int j;
+		for(j=0; j< 512; j++) {
+			printf("%c", tmp[j]);
+		}
+		printf("\n");
 
 		mydisk_write_block(i, tmp);
 

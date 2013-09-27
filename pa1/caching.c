@@ -16,6 +16,7 @@ struct cache_entry **ring_buffer;
 struct cache_entry *p;
 
 /* TODO: some helper functions e.g. find_cached_entry(block_id) */
+/* Finds the cache entry in the ring buffer. Return NULL if it does not exist*/
 struct cache_entry *find_cached_entry(int block_id) {
 	int i;
 	for (i=0; i<cache_blocks; i++) {
@@ -78,8 +79,14 @@ void *get_cached_block(int block_id)
 
 	if (entry != NULL) {
 		printf("get_cached_block() : Got the content from cache\n");
+int i;
+for (i=0; i<BLOCK_SIZE; i++) {
+	printf("%c", (entry->content)[i]);
+}
+printf("\n");
 		return entry->content;
 	}	
+	print();
 	printf("get_cached_block() : Did not find in cache\n");
 	return NULL;
 }
@@ -93,8 +100,8 @@ void *create_cached_block(int block_id)
 	 * flush dirty blocks to disk
 	 */
 	char *tmp;
-
-	if (p->block_id == -1) {
+	int next_block = p->block_id;
+	if (next_block == -1) {
 		//Found an empty entry
 		printf("create_cached_block() : Found an empty entry\n");
 		p -> block_id = block_id;
@@ -106,11 +113,25 @@ void *create_cached_block(int block_id)
 		if (p->is_dirty == 1) {
 			printf("create_cached_block() : Write back the dirty block back to disk\n");
 			mydisk_write_block(block_id, *(p->content));
+			p->block_id = block_id;
+			p->is_dirty = 0;
 			tmp = p->content;
 			p++;
 			return tmp;
 		} else {
 			printf("create_cached_block() : Not dirty\n");
+			printf("block_id = %d\n", block_id);
+			printf("block_id = %d\n", p->block_id);
+
+			p->block_id = &block_id;
+			p->is_dirty = 0;
+			tmp = p->content;
+printf("create-->\n");
+print();
+			p++;
+printf("after p++-->\n");
+print();
+			return tmp;
 		}
 	}
 

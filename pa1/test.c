@@ -131,7 +131,14 @@ printf("+++++++++++++++++++++++++++++\n");
 
 	size = BLOCK_SIZE;
 	rand_str(buffer, size);
+
+for (i=0; i<size; i++) {
+	printf("%c", ((char*)buffer)[i]);
+}
+printf("\n");
+
 	mydisk_write(144, size, buffer);
+printf("!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	memset(buffer2, 0, size);
 	mydisk_read(144, size, buffer2);
 	check_test(memcmp(buffer, buffer2, size));
