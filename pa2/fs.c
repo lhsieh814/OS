@@ -198,6 +198,7 @@ sfs_superblock_t *sfs_print_info()
 	/* TODO: load the superblock from disk and print*/
 	sfs_read_block((char*)&sb, 0);
 	printf("super block : nblocks = %d , nfreemap_blocks = %d , first_dir = %d\n", sb.nblocks, sb.nfreemap_blocks, sb.first_dir);
+	printf("address of sb = %d\n", &sb);
 	return &sb;
 }
 
@@ -228,7 +229,9 @@ int sfs_mkdir(char *dirname)
 		nextBlkid = sb->first_dir;
 		if (nextBlkid == 0) {
 			printf("sb first directory is empty, so assign first_dir to %d\n", bid);
+			printf("address of sb outside is = %d\n", sb);
 			sb->first_dir = bid;
+			sfs_write_block(sb, 0);
 		} else {
 			while(nextBlkid != 0) {
 				sfs_read_block((char*)&dir, nextBlkid);
@@ -264,7 +267,7 @@ int sfs_rmdir(char *dirname)
 int sfs_lsdir()
 {
 	/* TODO: go thru the linked list */
-	int count;
+	int count = 0;
 	sfs_dirblock_t dir;
 	blkid bid = sb.first_dir;
 	printf("******( ls )******\n");
@@ -272,14 +275,13 @@ int sfs_lsdir()
 	{
 		sfs_read_block((char*)&dir, bid);
 		bid = dir.next_dir;
-		printf("\tnext_dir = %d , dir_name = ");
+		printf("\tnext_dir = %d , dir_name = ", bid);
 		int i;
 		for(i=0; i<sizeof(dir.dir_name); i++)
 		{
 			printf("%c", ((char *)dir.dir_name)[i]);
 		}
 		printf("\n");
-
 		count++;
 	}
 	return 0;

@@ -50,6 +50,7 @@ sfs_lsdir();
 printf("++++++++++++++++++++++++++++++++++++++\n");
 
 	sfs_mkdir("haha");
+	printf(">>>>>>> ls = %d\n", sfs_lsdir());
 	if (sfs_lsdir() != 2)
 		return 1;
 	sfs_mkdir("wawa");
