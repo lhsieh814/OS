@@ -47,6 +47,8 @@ static int testcase2(void)
 	sfs_mkdir("root");
 printf("**************************************\n");
 sfs_lsdir();
+printf("++++++++++++++++++++++++++++++++++++++\n");
+
 	sfs_mkdir("haha");
 	if (sfs_lsdir() != 2)
 		return 1;
