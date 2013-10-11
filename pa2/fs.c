@@ -48,7 +48,7 @@ static blkid sfs_alloc_block()
 	for(i=1; i<size; i++)
 	{
 		printf("i = %d\n", i);
-		printf("freemap = %d\n", freemap);
+		printf("freemap = %d\n", &freemap);
 		j = (*freemap & (1 << i));
 		printf("here\n");
 		j = j >> i;
@@ -185,6 +185,7 @@ int sfs_mkfs()
 	freemap[0] = 0x3; /* 11b, freemap block and sb used*/
 	sfs_write_block(freemap, 1);
 	memset(&sb, 0, BLOCK_SIZE);
+	printf("freemap = %d\n", freemap);
 	return 0;
 }
 
@@ -223,7 +224,7 @@ int sfs_mkdir(char *dirname)
 			sfs_read_block((char*)&dir, current);
 			current = dir.next_dir;
 		}
-		dir.next_dir = bid;
+		sb->first_dir = bid;
 		sfs_write_block((char*)&dir, bid);
 	}	
 	return -1;
@@ -247,6 +248,25 @@ int sfs_rmdir(char *dirname)
 int sfs_lsdir()
 {
 	/* TODO: go thru the linked list */
+	int count;
+	sfs_dirblock_t dir;
+	blkid bid = sb.first_dir;
+	printf("inside the ls bid = %d\n", bid);
+	while (bid != 0)
+	{
+		sfs_read_block((char*)&dir, bid);
+		bid = dir.next_dir;
+		printf("WHHHHHHATTTT\n");
+		printf("next_dir = %d , dir_name = ");
+		int i;
+		for(i=0; i<sizeof(dir.dir_name); i++)
+		{
+			printf("%c", ((char *)dir.dir_name)[i]);
+		}
+		printf("\n");
+
+		count++;
+	}
 	return 0;
 }
 
