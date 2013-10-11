@@ -20,10 +20,17 @@ static fd_struct_t fdtable[SFS_MAX_OPENED_FILES];
  */
 static void sfs_flush_freemap()
 {
+	printf("sfs_flush_freemap\n");
 	size_t i;
 	blkid bid = 1;
 	char *p = (char *)freemap;
 	/* TODO: write freemap block one by one */
+	i = sb.nfreemap_blocks;
+	int j;
+	for (j=1; j <= i; j++)
+	{
+		sfs_write_block(&p, j);
+	}
 }
 
 /* 
@@ -34,10 +41,29 @@ static blkid sfs_alloc_block()
 	u32 size = sb.nfreemap_blocks * BLOCK_SIZE / sizeof(u32);	
 	u32 i, j;
 	/* TODO: find a freemap entry that has a free block */
-	
 	/* TODO: find out which bit in the entry is zero,
 	   set the bit, flush and return the bid
 	*/
+	printf("sfs_alloc_block\n");
+	for(i=1; i<size; i++)
+	{
+		printf("i = %d\n", i);
+		printf("freemap = %d\n", freemap);
+		j = (*freemap & (1 << i));
+		printf("here\n");
+		j = j >> i;
+		printf("j = %d\n", j);
+		if (j == 0)
+		{
+			// Found a free block
+			freemap = (*freemap | (1 << i));
+			sfs_flush_freemap();
+			printf("after flushing\n");
+
+			return i;
+		}
+	}
+	
 	return 0;
 }
 
@@ -50,6 +76,8 @@ static void sfs_free_block(blkid bid)
 	int entry_loc;
 	int bit_loc;
 	/* TODO unset the bit and flush the freemap */
+	freemap = (*freemap & ~(1 << entry_loc));
+	sfs_flush_freemap();
 }
 
 /* 
@@ -113,6 +141,17 @@ static blkid sfs_find_dir(char *dirname)
 	blkid dir_bid = 0;
 	sfs_dirblock_t dir;
 	/* TODO: start from the sb.first_dir, treverse the linked list */
+	sfs_superblock_t *sb = sfs_print_info();
+	dir_bid = sb->first_dir;
+	while (dir_bid != 0) 
+	{
+		sfs_read_block((char*)&dir, dir_bid);
+		if (dir.dir_name == dirname)
+		{
+			return dir_bid;
+		}
+		dir_bid = dir.next_dir;
+	}
 	return 0;
 }
 
@@ -155,6 +194,8 @@ int sfs_mkfs()
 sfs_superblock_t *sfs_print_info()
 {
 	/* TODO: load the superblock from disk and print*/
+	sfs_read_block((char*)&sb, 0);
+	printf("super block : nblocks = %d , nfreemap_blocks = %d , first_dir = %d\n", sb.nblocks, sb.nfreemap_blocks, sb.first_dir);
 	return &sb;
 }
 
@@ -166,7 +207,26 @@ int sfs_mkdir(char *dirname)
 {
 	/* TODO: test if the dir exists */
 	/* TODO: insert a new dir to the linked list */
-	return 0;
+	blkid current;
+	sfs_dirblock_t dir;
+	blkid bid = sfs_find_dir(dirname);
+
+	if (bid == 0)
+	{
+		printf("Could not find the directory, so will allocate new block.\n");
+		bid = sfs_alloc_block();
+		printf("Make new directory with the block id = %d\n", bid);
+		// Add the new directory to the directory linked list
+		sfs_superblock_t *sb = sfs_print_info();
+		current = sb->first_dir;
+		while(current != 0) {
+			sfs_read_block((char*)&dir, current);
+			current = dir.next_dir;
+		}
+		dir.next_dir = bid;
+		sfs_write_block((char*)&dir, bid);
+	}	
+	return -1;
 }
 
 /*
