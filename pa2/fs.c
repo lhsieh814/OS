@@ -27,10 +27,10 @@ static void sfs_flush_freemap()
 	/* TODO: write freemap block one by one */
 	i = sb.nfreemap_blocks;
 	int j;
-	printf("nfreemap_blocks = %d\n", i);
+	printf("\tnfreemap_blocks = %d\n", i);
 	for (j=1; j <= i; j++)
 	{
-		printf("freemap = %x\n", *freemap);
+		printf("\tfreemap = %x\n", *freemap);
 		sfs_write_block(&p, j);
 	}
 }
@@ -47,20 +47,20 @@ static blkid sfs_alloc_block()
 	   set the bit, flush and return the bid
 	*/
 	printf("sfs_alloc_block\n");
-printf("-----> freemap = %x\n", *freemap);
+printf("\t-----> freemap = %x\n", *freemap);
 	for(i=1; i<size; i++)
 	{
 		j = (*freemap & (1 << i));
 		j = j >> i;
-		printf("j = %d\n", j);
 		if (j == 0)
 		{
 			// Found a free block
 			*freemap |= (1 << i);
-			printf("-----> freemap = %x\n", *freemap);
+			printf("\tfound free space at i = %d\n", i);
+			printf("\t-----> freemap = %x\n", *freemap);
 
 			sfs_flush_freemap();
-			printf("after flushing freemap\n");
+			printf("\tafter flushing freemap\n");
 
 			return i;
 		}
@@ -198,7 +198,6 @@ sfs_superblock_t *sfs_print_info()
 	/* TODO: load the superblock from disk and print*/
 	sfs_read_block((char*)&sb, 0);
 	printf("super block : nblocks = %d , nfreemap_blocks = %d , first_dir = %d\n", sb.nblocks, sb.nfreemap_blocks, sb.first_dir);
-	printf("address of sb = %d\n", &sb);
 	return &sb;
 }
 
@@ -213,7 +212,7 @@ int sfs_mkdir(char *dirname)
 	blkid nextBlkid;
 	sfs_dirblock_t dir, new_dir;
 
-	printf("******( mkdir %c%c%c%c%c%c)******\n", dirname[0], dirname[1], dirname[2]
+	printf("\n******( mkdir %c%c%c%c%c%c)******\n\n", dirname[0], dirname[1], dirname[2]
 		, dirname[3], dirname[4], dirname[5]);
 	// Try finding the directory if it exists
 	blkid bid = sfs_find_dir(dirname);
@@ -229,15 +228,19 @@ int sfs_mkdir(char *dirname)
 		nextBlkid = sb->first_dir;
 		if (nextBlkid == 0) {
 			printf("sb first directory is empty, so assign first_dir to %d\n", bid);
-			printf("address of sb outside is = %d\n", sb);
 			sb->first_dir = bid;
 			sfs_write_block(sb, 0);
 		} else {
-			while(nextBlkid != 0) {
-				sfs_read_block((char*)&dir, nextBlkid);
+			sfs_read_block((char*)&dir, nextBlkid);
+			while(dir.next_dir != 0) {
 				nextBlkid = dir.next_dir;
+				sfs_read_block((char*)&dir, nextBlkid);
+				printf("nextBlkid = %d\n", nextBlkid);
 			}
+			printf("Set this dir %c%c%c%c from %d to %d\n", dir.dir_name[0], dir.dir_name[1]
+				, dir.dir_name[2], dir.dir_name[3], dir.next_dir, bid);
 			dir.next_dir = bid;
+			sfs_write_block((char*)&dir, nextBlkid);
 		}
 		// Create new directory with next_dir=0 and dir_name
 		new_dir.next_dir = 0;
@@ -270,21 +273,21 @@ int sfs_lsdir()
 	int count = 0;
 	sfs_dirblock_t dir;
 	blkid bid = sb.first_dir;
-	printf("******( ls )******\n");
+	printf("\n******( ls )******\n\n");
 	while (bid != 0)
 	{
 		sfs_read_block((char*)&dir, bid);
-		bid = dir.next_dir;
-		printf("\tnext_dir = %d , dir_name = ", bid);
+		printf("\tdir = %d , next_dir = %d , dir_name = ", bid, dir.next_dir);
 		int i;
 		for(i=0; i<sizeof(dir.dir_name); i++)
 		{
 			printf("%c", ((char *)dir.dir_name)[i]);
 		}
 		printf("\n");
+		bid = dir.next_dir;
 		count++;
 	}
-	return 0;
+	return count;
 }
 
 /*

@@ -45,12 +45,7 @@ static int testcase2(void)
 {
 	/* create and remove directories */
 	sfs_mkdir("root");
-printf("**************************************\n");
-sfs_lsdir();
-printf("++++++++++++++++++++++++++++++++++++++\n");
-
 	sfs_mkdir("haha");
-	printf(">>>>>>> ls = %d\n", sfs_lsdir());
 	if (sfs_lsdir() != 2)
 		return 1;
 	sfs_mkdir("wawa");
@@ -263,10 +258,14 @@ int main()
 
 	for (i = 0; i < sizeof(tests)/sizeof(tests[0]); ++i) {
 		if (tests[i]()) {
+printf("\n-------------------------------------------------\n");		
 			printf("%d: FAILED\n", i+1);
+printf("-------------------------------------------------\n\n");
 			break;
 		}
+printf("\n-------------------------------------------------\n");
 		printf("%d: PASS\n", i+1);
+printf("-------------------------------------------------\n\n");
 	}
 
 	sfs_close_storage();
