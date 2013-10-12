@@ -426,6 +426,7 @@ int sfs_open(char *dirname, char *name)
 int sfs_close(int fd)
 {
 	/* TODO: mark the valid field */
+	fdtable[fd].valid = 0;
 	return 0;
 }
 
@@ -440,11 +441,31 @@ int sfs_remove(int fd)
 	sfs_dirblock_t dir;
 	int i;
 
+	printf("\n******( remove [fd = %d] )******\n\n", fd);
+
 	/* TODO: update dir */
+	sfs_read_block((char*)&dir, fdtable[fd].dir_bid);
+	for (i=0; i<SFS_DB_NINODES; i++)
+	{
+		if (dir.inodes[i] == fdtable[fd].inode_bid)
+		{
+			dir.inodes[i] = 0;
+		}
+	}
+	// Write dir block to update inode values
+	sfs_write_block((char*)&dir, fdtable[fd].dir_bid);
 
 	/* TODO: free inode and all its frames */
+	frame_bid = fdtable[fd].inode.first_frame;
+	while (frame_bid != 0)
+	{
+		sfs_free_block(frame_bid);
+	}
+	sfs_free_block(fdtable[fd].inode_bid);
 
 	/* TODO: close the file */
+	sfs_close(fd);
+
 	return 0;
 }
 
