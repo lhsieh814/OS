@@ -100,14 +100,48 @@ static void sfs_resize_file(int fd, u32 new_size)
 	int i, j;
 	blkid frame_bid = 0;
 	sfs_inode_frame_t frame;
+	blkid bid, content_bid;
 
 	/* TODO: check if new frames are required */
-	
-	/* TODO: allocate a full frame */
+	if (new_nframe - old_nframe > 0)
+	{
+		/* TODO: allocate a full frame */
+		frame_bid = sfs_alloc_block();
+		content_bid = sfs_alloc_block();
+		printf("---->content_bid = %d\n", content_bid);
+		frame.content[0] = content_bid;
+		// for(j=0; j<SFS_FRAME_COUNT; j++)
+		// {
+		// 	content_bid = sfs_alloc_block();
+		// 	frame.content[j] = content_bid;
+		// }
 
-	/* TODO: add the new frame to the inode frame list
-	   Note that if the inode is changed, you need to write it to the disk
-	*/
+		/* TODO: add the new frame to the inode frame list
+		   Note that if the inode is changed, you need to write it to the disk
+		*/
+		bid = fdtable[fd].inode.first_frame;
+		if (bid == 0)
+		{
+			fdtable[fd].inode.first_frame = frame_bid;
+			sfs_write_block((char*)&fdtable[fd].inode, fdtable[fd].inode_bid);
+		} else {
+			for (i=0; i<SFS_FRAME_COUNT; i++)
+			{
+
+				if (bid == 0)
+				{
+					frame.next = frame_bid;
+					break;
+				}
+				sfs_read_block((char*)&frame, bid);
+				bid = frame.next;
+
+			}
+		}
+		// Write the new frame block
+		sfs_write_block((char*)&frame, frame_bid);
+	}
+
 }
 
 /*
@@ -121,16 +155,27 @@ static void sfs_resize_file(int fd, u32 new_size)
 static u32 sfs_get_file_content(blkid *bids, int fd, u32 cur, u32 length)
 {
 	/* the starting block of the content */
-	u32 start;
+	u32 start = cur / BLOCK_SIZE;
 	/* the ending block of the content */
-	u32 end;
+	u32 end = (cur + length) / BLOCK_SIZE;
 	u32 i;
 	sfs_inode_frame_t frame;
+	blkid bid;
 
 	/* TODO: find blocks between start and end.
 	   Transverse the frame list if needed
 	*/
-	return 0;
+	bid = fdtable[fd].inode.first_frame;
+	sfs_read_block((char*)&frame, bid);
+
+	for (i=start; i<=end; i++)
+	{
+		bids[i-start] = frame.content[i];
+	}
+
+	free(bids);
+
+	return end-start+1;
 }
 
 /*
@@ -515,18 +560,47 @@ int sfs_write(int fd, void *buf, int length)
 	char tmp[BLOCK_SIZE];
 	u32 cur = fdtable[fd].cur;
 
-	/* TODO: check if we need to resize */
-	
-	/* TODO: get the block ids of all contents (using sfs_get_file_content() */
+	printf("\n******( write [ fd = %d, length = %d ] )******\n\n", fd, length);
 
+	/* TODO: check if we need to resize */
+	printf("size of inode %d, cur = %d , frame_bid = %d \n", fdtable[fd].inode.size, cur,
+		fdtable[fd].inode.first_frame);
+	if ((cur+length) > fdtable[fd].inode.size) {
+		// Need to allocate a new frame
+		sfs_resize_file(fd, fdtable[fd].inode.size + length);
+		printf("After resizing inode first frame = %d\n", fdtable[fd].inode.first_frame);
+	}
+	/* TODO: get the block ids of all contents (using sfs_get_file_content() */
+	bids = malloc(length/BLOCK_SIZE + 1);
+	n = sfs_get_file_content(bids, fd, cur, length);
 	/* TODO: main loop, go through every block, copy the necessary parts
 	   to the buffer, consult the hint in the document. Do not forget to 
 	   flush to the disk.
 	*/
+	remaining = length;
+	offset = cur % BLOCK_SIZE;
+	to_copy = BLOCK_SIZE - offset;
+
+	for (i=0; i<n; i++)
+	{
+		memcpy(tmp+offset, buf, to_copy);
+		sfs_write_block((char*)&tmp, bids[i]);
+		remaining -= to_copy;
+		offset = 0;
+		if (remaining > BLOCK_SIZE)
+		{
+			to_copy = BLOCK_SIZE - offset;
+		} else {
+			to_copy = remaining;
+		}
+	}
 	/* TODO: update the cursor and free the temp buffer
 	   for sfs_get_file_content()
 	*/
-	return 0;
+	cur += length;
+	// free(bids);
+
+	return length;
 }
 
 /*
@@ -546,6 +620,7 @@ int sfs_read(int fd, void *buf, int length)
 	u32 cur = fdtable[fd].cur;
 
 	/* TODO: check if we need to truncate */
+	
 	/* TODO: similar to the sfs_write() */
 	return 0;
 }

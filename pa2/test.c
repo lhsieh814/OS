@@ -96,11 +96,14 @@ static int testcase4(void)
 	int tmp;
 	int fd;
 	fd = sfs_open("root","file2");
+printf("######################################\n");
+
 	tmp = sfs_write(fd, "hello world!", 13);
 	sfs_close(fd);
 	if (tmp != 13) {
 		return 1;
 	}
+printf("+++++++++++++++++++++++++++++++++++++++++++\n");
 	fd = sfs_open("root", "file2");
 	memset(tmpbuf,0,BLOCK_SIZE);
 	tmp = sfs_read(fd, tmpbuf, 13);
