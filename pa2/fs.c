@@ -114,10 +114,10 @@ static void sfs_resize_file(int fd, u32 new_size)
 		// Empty content block
 		char tmp[BLOCK_SIZE];
 		memset(tmp, 0, BLOCK_SIZE);
-		sfs_write_block(tmp, content_bid);
+		sfs_write_block((char*)&tmp, content_bid);
 
-		// for(j=0; j<SFS_FRAME_COUNT; j++)
-		// {
+		//for(j=0; j<SFS_FRAME_COUNT; j++)
+		//{
 		// 	content_bid = sfs_alloc_block();
 		// 	frame.content[j] = content_bid;
 		// }
@@ -133,7 +133,6 @@ static void sfs_resize_file(int fd, u32 new_size)
 		} else {
 			for (i=0; i<SFS_FRAME_COUNT; i++)
 			{
-
 				if (bid == 0)
 				{
 					frame.next = frame_bid;
@@ -383,12 +382,13 @@ int sfs_lsdir()
 	while (bid != 0)
 	{
 		sfs_read_block((char*)&dir, bid);
-		printf("\tdir = %d , next_dir = %d , dir_name = ", bid, dir.next_dir);
+		printf("\tdir_name = ");
 		int i;
 		for(i=0; i<sizeof(dir.dir_name); i++)
 		{
 			printf("%c", ((char *)dir.dir_name)[i]);
 		}
+		printf("\t\tdir_bid = %d\tnext_dir = %d", bid, dir.next_dir);
 		printf("\n");
 		bid = dir.next_dir;
 		count++;
@@ -470,9 +470,10 @@ printf("root directory bid = %d\n", dir_bid);
 		// Did not find the inode, create a new one
 		new_inode.first_frame = 0;
 		new_inode.size = 0;
+		memset(new_inode.file_name, 0, sizeof(new_inode.file_name));
 		strcpy(new_inode.file_name, name);
-		printf("inode file_name = %c%c%c%c%c and bid = %d\n", new_inode.file_name[0], new_inode.file_name[1]
-			, new_inode.file_name[2], new_inode.file_name[3], new_inode.file_name[4], inode_bid);
+		printf("inode file_name = %c%c%c%c%c%c%c and bid = %d\n", new_inode.file_name[0], new_inode.file_name[1]
+			, new_inode.file_name[2], new_inode.file_name[3], new_inode.file_name[4], new_inode.file_name[5], new_inode.file_name[6], inode_bid);
 		sfs_write_block((char*)&new_inode, inode_bid);
 		sfs_write_block((char*)&dir, dir_bid);
 	}
@@ -544,6 +545,7 @@ int sfs_ls()
 	/* TODO: nested loop: traverse all dirs and all containing files */
 	int count = 0;
 	sfs_dirblock_t dir;
+	sfs_inode_t inode;
 	blkid bid;
 
 	printf("\n******( ls )******\n\n");
@@ -551,11 +553,25 @@ int sfs_ls()
 	bid = sb.first_dir;
 	while (bid != 0) {
 		sfs_read_block((char*)&dir, bid);
+		int j;
+		for (j=0; j<sizeof(dir.dir_name); j++)
+		{
+			printf("%c", dir.dir_name[j]);
+		}
+		printf("\n");
 		int i;
 		for (i=0; i<SFS_DB_NINODES; i++)
 		{
 			if (dir.inodes[i] != 0)
 			{
+				sfs_read_block((char*)&inode, dir.inodes[i]);
+				int k;
+				printf("\t");
+				for (k=0; k<sizeof(inode.file_name); k++)
+				{
+					printf("%c", inode.file_name[k]);
+				}
+				printf("\tsize = %d\n", inode.size);
 				count++;
 			}
 		}
@@ -583,11 +599,12 @@ int sfs_write(int fd, void *buf, int length)
 	u32 cur = fdtable[fd].cur;
 
 	printf("\n******( write [ fd = %d, length = %d ] )******\n\n", fd, length);
+printf("buf = [%c%c%c%c%c]\n", ((char*)buf)[0], ((char*)buf)[1], ((char*)buf)[2], ((char*)buf)[3], ((char*)buf)[4]);
 
 	/* TODO: check if we need to resize */
-	printf("size of inode %d, cur = %d , frame_bid = %d \n", fdtable[fd].inode.size, cur,
+	printf("size of inode = %d, cur = %d , frame_bid = %d \n", fdtable[fd].inode.size, cur,
 		fdtable[fd].inode.first_frame);
-	if ((cur+length) > fdtable[fd].inode.size) {
+	if ((cur+length) > BLOCK_SIZE/*fdtable[fd].inode.size*/) {
 		// Need to allocate a new frame
 		sfs_resize_file(fd, fdtable[fd].inode.size + length);
 		printf("After resizing inode first frame = %d\n", fdtable[fd].inode.first_frame);
@@ -607,14 +624,20 @@ int sfs_write(int fd, void *buf, int length)
 	*/
 	remaining = length;
 	offset = cur % BLOCK_SIZE;
-	to_copy = BLOCK_SIZE - offset;
-
+	if (BLOCK_SIZE - offset > remaining)
+	{
+		to_copy = remaining;
+	}
+	else
+	{
+		to_copy = fdtable[fd].inode.size - offset;
+	}
 	for (i=0; i<n; i++)
 	{
-		printf("offset = %d , to_copy = %d\n", offset, to_copy);
-		memcpy(tmp+offset, buf, to_copy);
+		printf("offset = %d , to_copy = %d , remaining = %d\n", offset, to_copy, remaining);
+		memcpy(tmp + offset , buf, to_copy);
 		printf("write content to bid = %d\n", bids[i]);
-		printf("content = %c%c%c%c%c%c%c%c%c%c%c%c\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5],
+		printf("content = [%c%c%c%c%c%c%c%c%c%c%c%c]\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5],
 			tmp[6], tmp[7], tmp[8], tmp[9], tmp[10], tmp[11]);
 		sfs_write_block((char*)&tmp, bids[i]);
 		remaining -= to_copy;
@@ -629,17 +652,15 @@ int sfs_write(int fd, void *buf, int length)
 	/* TODO: update the cursor and free the temp buffer
 	   for sfs_get_file_content()
 	*/
+printf("Before : cur = %d , inode.size = %d , length = %d\n", fdtable[fd].cur, fdtable[fd].inode.size, length);
 	fdtable[fd].cur += length;
-	if (fdtable[fd].inode.size + length < fdtable[fd].cur)
+	if (fdtable[fd].inode.size < fdtable[fd].cur)
 	{
 		fdtable[fd].inode.size = fdtable[fd].cur;
 	} 
-	else 
-	{
-		fdtable[fd].inode.size = fdtable[fd].inode.size + length;
-	}
+
 	sfs_write_block((char*)&(fdtable[fd].inode), fdtable[fd].inode_bid);
-printf("cur = %d , inode.size = %d\n", fdtable[fd].cur, fdtable[fd].inode.size);
+printf("After : cur = %d , inode.size = %d\n", fdtable[fd].cur, fdtable[fd].inode.size);
 	return length;
 }
 
@@ -678,7 +699,14 @@ printf("n = %d\n", n);
 	// Read operation
 	remaining = length;
 	offset = cur % BLOCK_SIZE;
-	to_copy = BLOCK_SIZE - offset;
+	if (BLOCK_SIZE - offset > remaining)
+	{
+		to_copy = remaining;
+	}
+	else
+	{
+		to_copy = fdtable[fd].inode.size - offset;
+	}
 
 	for (i = 0; i < n; i++)
 	{
@@ -717,7 +745,6 @@ int sfs_seek(int fd, int relative, int loc)
 	u32 cur = fdtable[fd].cur;
 
 	printf("\n******( seek [ fd = %d, relative = %d , loc = %d ] )******\n\n", fd, relative, loc);
-
 	switch (loc) {
 		case SFS_SEEK_SET:
 			cur = 0;
@@ -733,9 +760,9 @@ int sfs_seek(int fd, int relative, int loc)
 			printf("ERROR: invalid input for loc\n");
 			return 1;
 	}
-
-	cur += relative;
-printf("cur = %d\n", cur);
+printf("Seek cur = %d\n", cur);
+	cur = cur + relative;
+printf("cur + (%d) = %d\n", relative, cur);
 	fdtable[fd].cur = cur;
 
 	return 0;
