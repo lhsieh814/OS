@@ -110,6 +110,12 @@ static void sfs_resize_file(int fd, u32 new_size)
 		content_bid = sfs_alloc_block();
 		printf("---->content_bid = %d\n", content_bid);
 		frame.content[0] = content_bid;
+
+		// Empty content block
+		char tmp[BLOCK_SIZE];
+		memset(tmp, 0, BLOCK_SIZE);
+		sfs_write_block(tmp, content_bid);
+
 		// for(j=0; j<SFS_FRAME_COUNT; j++)
 		// {
 		// 	content_bid = sfs_alloc_block();
@@ -433,7 +439,6 @@ printf("root directory bid = %d\n", dir_bid);
 	{
 		if (dir.inodes[i] != 0)
 		{
-			printf("Get here\n");
 			sfs_read_block((char*)&new_inode, dir.inodes[i]);
 			printf("inode name = %c%c%c%c\n", new_inode.file_name[0], new_inode.file_name[1], new_inode.file_name[2], new_inode.file_name[3]);
 			printf("inode size = %d , first_frame = %d\n", new_inode.size, new_inode.first_frame);
@@ -478,24 +483,6 @@ printf("root directory bid = %d\n", dir_bid);
 	fdtable[fd].cur = 0;
 	fdtable[fd].valid = 1;
 	printf("inode size = %d\n", fdtable[fd].inode.size);
-
-/***********   remove   *******/
-	sfs_dirblock_t dir2;
-	sfs_read_block((char*)&dir2, dir_bid);
-	printf("dir name = %c%c%c%c , inodes[0] = %d\n", dir.dir_name[0], dir.dir_name[1]
-		, dir.dir_name[2], dir.dir_name[3], dir.inodes[0]);
-	sfs_inode_t inode2;
-	sfs_read_block((char*)&inode2, dir.inodes[0]);
-	printf("inode2 size = %d , first_frame = %d, file_name = %c%c%c%c%c\n", inode2.size,
-		inode2.first_frame, inode2.file_name[0], inode2.file_name[1], inode2.file_name[2]
-		, inode2.file_name[3], inode2.file_name[4]);
-	sfs_inode_frame_t frame2;
-	sfs_read_block((char*)&frame2, inode2.first_frame);
-	printf("frame content[0] = %d\n", frame2.content[0]);
-	char tmp[BLOCK_SIZE];
-	sfs_read_block((char*)&tmp, frame2.content[0]);
-	printf("content = %c%c%c%c%c%c\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
-/******************/
 
 	return fd;
 }
@@ -624,9 +611,11 @@ int sfs_write(int fd, void *buf, int length)
 
 	for (i=0; i<n; i++)
 	{
+		printf("offset = %d , to_copy = %d\n", offset, to_copy);
 		memcpy(tmp+offset, buf, to_copy);
 		printf("write content to bid = %d\n", bids[i]);
-		printf("content = %c%c%c%c%c%c\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
+		printf("content = %c%c%c%c%c%c%c%c%c%c%c%c\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5],
+			tmp[6], tmp[7], tmp[8], tmp[9], tmp[10], tmp[11]);
 		sfs_write_block((char*)&tmp, bids[i]);
 		remaining -= to_copy;
 		offset = 0;
@@ -641,9 +630,16 @@ int sfs_write(int fd, void *buf, int length)
 	   for sfs_get_file_content()
 	*/
 	fdtable[fd].cur += length;
-	fdtable[fd].inode.size = fdtable[fd].inode.size + length;
+	if (fdtable[fd].inode.size + length < fdtable[fd].cur)
+	{
+		fdtable[fd].inode.size = fdtable[fd].cur;
+	} 
+	else 
+	{
+		fdtable[fd].inode.size = fdtable[fd].inode.size + length;
+	}
 	sfs_write_block((char*)&(fdtable[fd].inode), fdtable[fd].inode_bid);
-
+printf("cur = %d , inode.size = %d\n", fdtable[fd].cur, fdtable[fd].inode.size);
 	return length;
 }
 
@@ -697,7 +693,8 @@ printf("n = %d\n", n);
 			to_copy = remaining;
 		}
 	}
-
+printf("buf = %c%c%c%c%c%c%c%c%c%c%c%c%c\n", ((char*)buf)[0], ((char*)buf)[1], ((char*)buf)[2], ((char*)buf)[3],
+	((char*)buf)[4], ((char*)buf)[5], ((char*)buf)[6], ((char*)buf)[7], ((char*)buf)[8], ((char*)buf)[9], ((char*)buf)[10], ((char*)buf)[11], ((char*)buf)[12]);
 	// Update variables
 	fdtable[fd].cur += length;
 
@@ -738,7 +735,7 @@ int sfs_seek(int fd, int relative, int loc)
 	}
 
 	cur += relative;
-
+printf("cur = %d\n", cur);
 	fdtable[fd].cur = cur;
 
 	return 0;
