@@ -96,14 +96,11 @@ static int testcase4(void)
 	int tmp;
 	int fd;
 	fd = sfs_open("root","file2");
-printf("######################################\n");
-
 	tmp = sfs_write(fd, "hello world!", 13);
 	sfs_close(fd);
 	if (tmp != 13) {
 		return 1;
 	}
-printf("+++++++++++++++++++++++++++++++++++++++++++\n");
 	fd = sfs_open("root", "file2");
 	memset(tmpbuf,0,BLOCK_SIZE);
 	tmp = sfs_read(fd, tmpbuf, 13);
@@ -145,13 +142,16 @@ static int testcase6(void)
 	if (tmp != 13) {
 		return 1;
 	}
+printf("#############################\n");
 	sfs_seek(fd, -7, SFS_SEEK_CUR);
 	memset(tmpbuf,0,BLOCK_SIZE);
 	for (i = 0; i < BLOCK_SIZE && !sfs_eof(fd); ++i) {
 		tmp = sfs_read(fd, &tmpbuf[i], 1);
+printf("tmp = %d , i = %d\n", tmp, i);
 		if (tmp != 1)
 			return 1;
 	}
+printf("Before closing\n");
 	sfs_close(fd);
 	return memcmp("world!", tmpbuf, 7);
 }

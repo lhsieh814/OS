@@ -431,18 +431,22 @@ printf("root directory bid = %d\n", dir_bid);
 	*/
 	for (i=0; i<SFS_DB_NINODES; i++) 
 	{
-		inode = &(dir.inodes[i]);
-		printf("dir.inodes[%d] = %d\n", i);
-		//printf("inode name = %c%c%c%c\n", inode->file_name[0], inode->file_name[1], inode->file_name[2], inode->file_name[3]);
-		if (!strncmp((*inode).file_name, name, sizeof(name))) {
-			printf("i = %d , inode name = %c%c%c%c\n", i, (*inode).file_name[0], (*inode).file_name[1]
-			, (*inode).file_name[2], (*inode).file_name[3]);
-			inode = dir.inodes[i];
-			inode_bid = i;
-printf("----> Should get here \n");
-			break;
+		if (dir.inodes[i] != 0)
+		{
+			printf("Get here\n");
+			sfs_read_block((char*)&new_inode, dir.inodes[i]);
+			printf("inode name = %c%c%c%c\n", new_inode.file_name[0], new_inode.file_name[1], new_inode.file_name[2], new_inode.file_name[3]);
+			printf("inode size = %d , first_frame = %d\n", new_inode.size, new_inode.first_frame);
+			if (!strncmp(new_inode.file_name, name, sizeof(name))) {
+				printf("i = %d , inode name = %c%c%c%c\n", i, new_inode.file_name[0], new_inode.file_name[1]
+				, new_inode.file_name[2], new_inode.file_name[3]);
+				inode_bid = dir.inodes[i];
+	printf("----> Should get here inode_bid = %d\n", inode_bid);
+				break;
+			}
 		}
 	}
+
 	if (inode_bid == 0)
 	{
 		printf("File does not exists, create a new inode file\n");
@@ -454,28 +458,28 @@ printf("----> Should get here \n");
 			if (dir.inodes[i] == 0) 
 			{
 				dir.inodes[i] = inode_bid;
-				printf("i = %d\n", i);
+				printf("dir.inodes[%d] = %d\n", i, inode_bid);
 				break;
 			}
 		}
 		// Did not find the inode, create a new one
-		(*inode).first_frame = 0;
-		(*inode).size = 0;
-		strcpy(inode->file_name, name);
-		printf("inode file_name = %c%c%c%c%c and bid = %d\n", inode->file_name[0], inode->file_name[1]
-			, inode->file_name[2], inode->file_name[3], inode->file_name[4], inode_bid);
-		sfs_write_block((char*)&inode, inode_bid);
+		new_inode.first_frame = 0;
+		new_inode.size = 0;
+		strcpy(new_inode.file_name, name);
+		printf("inode file_name = %c%c%c%c%c and bid = %d\n", new_inode.file_name[0], new_inode.file_name[1]
+			, new_inode.file_name[2], new_inode.file_name[3], new_inode.file_name[4], inode_bid);
+		sfs_write_block((char*)&new_inode, inode_bid);
 		sfs_write_block((char*)&dir, dir_bid);
 	}
-
 	/* TODO: create a new file */
 	fdtable[fd].dir_bid = dir_bid;
 	fdtable[fd].inode_bid = inode_bid;
-	fdtable[fd].inode = *inode;
+	fdtable[fd].inode = new_inode;
+	fdtable[fd].cur = 0;
 	fdtable[fd].valid = 1;
 	printf("inode size = %d\n", fdtable[fd].inode.size);
 
-/******************/
+/***********   remove   *******/
 	sfs_dirblock_t dir2;
 	sfs_read_block((char*)&dir2, dir_bid);
 	printf("dir name = %c%c%c%c , inodes[0] = %d\n", dir.dir_name[0], dir.dir_name[1]
@@ -491,10 +495,6 @@ printf("----> Should get here \n");
 	char tmp[BLOCK_SIZE];
 	sfs_read_block((char*)&tmp, frame2.content[0]);
 	printf("content = %c%c%c%c%c%c\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
-
-
-
-
 /******************/
 
 	return fd;
@@ -640,23 +640,9 @@ int sfs_write(int fd, void *buf, int length)
 	/* TODO: update the cursor and free the temp buffer
 	   for sfs_get_file_content()
 	*/
-	cur += length;
+	fdtable[fd].cur += length;
 	fdtable[fd].inode.size = fdtable[fd].inode.size + length;
 	sfs_write_block((char*)&(fdtable[fd].inode), fdtable[fd].inode_bid);
-/**********/	
-	sfs_inode_t inode2;
-	sfs_read_block((char*)&inode2, fdtable[fd].inode_bid);
-	printf("inode size = %d, inode name = %c%c%c%c%c\n", inode2.size,
-		inode2.file_name[0], inode2.file_name[1], inode2.file_name[2], inode2.file_name[3], inode2.file_name[4]);
-	sfs_inode_frame_t frame3;
-	sfs_read_block((char*)&frame3, fdtable[fd].inode.first_frame);
-	printf("content[0] bid = %d\n", frame3.content[0]);
-	sfs_read_block((char*)&tmp, frame3.content[0]);
-	printf("frame content = %c%c%c%c%c%c\n", tmp[0], tmp[1], 
-		tmp[2], tmp[3], tmp[4], tmp[5]);
-/**********/	
-
-	// free(bids);
 
 	return length;
 }
@@ -692,7 +678,7 @@ int sfs_read(int fd, void *buf, int length)
 	// Get the block ids of content
 	bids = malloc(length/BLOCK_SIZE + 1);
 	n = sfs_get_file_content(bids, fd, cur, length);
-
+printf("n = %d\n", n);
 	// Read operation
 	remaining = length;
 	offset = cur % BLOCK_SIZE;
@@ -713,10 +699,9 @@ int sfs_read(int fd, void *buf, int length)
 	}
 
 	// Update variables
-	cur += length;
-	//free(bids);
+	fdtable[fd].cur += length;
 
-	return 0;
+	return length;
 }
 
 /* 
@@ -732,6 +717,30 @@ int sfs_read(int fd, void *buf, int length)
 int sfs_seek(int fd, int relative, int loc)
 {
 	/* TODO: get the old cursor, change it as specified by the parameters */
+	u32 cur = fdtable[fd].cur;
+
+	printf("\n******( seek [ fd = %d, relative = %d , loc = %d ] )******\n\n", fd, relative, loc);
+
+	switch (loc) {
+		case SFS_SEEK_SET:
+			cur = 0;
+			break;
+		case SFS_SEEK_CUR:
+			cur = fdtable[fd].cur;
+			break;
+		case SFS_SEEK_END:
+			cur = fdtable[fd].inode.size;
+			break;
+		default:
+			// Invalid input for loc
+			printf("ERROR: invalid input for loc\n");
+			return 1;
+	}
+
+	cur += relative;
+
+	fdtable[fd].cur = cur;
+
 	return 0;
 }
 
@@ -742,6 +751,14 @@ int sfs_seek(int fd, int relative, int loc)
  */
 int sfs_eof(int fd)
 {
+	printf("\n******( eof [ fd = %d ] )******\n\n", fd);
+
 	/* TODO: check if the cursor has gone out of bound */
+	if (fdtable[fd].cur == fdtable[fd].inode.size)
+	{
+		// Cursor is out of bound
+		return 1;
+	}
+
 	return 0;
 }
