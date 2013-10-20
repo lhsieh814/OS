@@ -41,28 +41,34 @@ static void sfs_flush_freemap()
 static blkid sfs_alloc_block()
 {
 	u32 size = sb.nfreemap_blocks * BLOCK_SIZE / sizeof(u32);	
-	u32 i, j;
+	u32 i, j, k;
 	/* TODO: find a freemap entry that has a free block */
 	/* TODO: find out which bit in the entry is zero,
 	   set the bit, flush and return the bid
 	*/
 	printf("sfs_alloc_block\n");
-printf("\t-----> freemap = %x\n", *freemap);
-	for(i=1; i<size; i++)
+printf("\t-----> freemap = %x, %x\n", freemap[0], freemap[2]);
+printf("\t%d * %d / %d\n", sb.nfreemap_blocks, BLOCK_SIZE, sizeof(u32));
+
+	for (i=0; i<size; i++)
 	{
-		j = (*freemap & (1 << i));
-		j = j >> i;
-		if (j == 0)
+		for (k=0; k < (sizeof(u32)*8); k++) 
 		{
-			// Found a free block
-			*freemap |= (1 << i);
-			printf("\tfound free space at i = %d\n", i);
-			printf("\t-----> freemap = %x\n", *freemap);
+			j = (freemap[i] & (1 << k));
+			printf("\tk = %d , j = %d\n", k, j);
+			j = j >> k;
+			if (j == 0)
+			{
+				// Found a free block
+				freemap[i] |= (1 << k);
+				printf("\tfound free space at i = %d\n", k);
+				printf("\t-----> freemap = %x\n", freemap[k]);
 
-			sfs_flush_freemap();
-			printf("\tafter flushing freemap\n");
+				sfs_flush_freemap();
+				printf("\tafter flushing freemap\n");
 
-			return i;
+				return k;
+			}
 		}
 	}
 	
