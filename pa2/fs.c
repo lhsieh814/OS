@@ -111,11 +111,6 @@ static void sfs_resize_file(int fd, u32 new_size)
 			memset(tmp, 0, BLOCK_SIZE);
 			sfs_write_block((char*)&tmp, content_bid);
 		}
-		//for(j=0; j<SFS_FRAME_COUNT; j++)
-		//{
-		// 	content_bid = sfs_alloc_block();
-		// 	frame.content[j] = content_bid;
-		// }
 
 		/* TODO: add the new frame to the inode frame list
 		   Note that if the inode is changed, you need to write it to the disk
@@ -173,7 +168,7 @@ static u32 sfs_get_file_content(blkid *bids, int fd, u32 cur, u32 length)
 		bids[i-start] = frame.content[i];
 	}
 
-	free(bids);
+//	free(bids);
 
 	return end-start+1;
 }
@@ -188,8 +183,9 @@ static blkid sfs_find_dir(char *dirname)
 	blkid dir_bid = 0;
 	sfs_dirblock_t dir;
 	/* TODO: start from the sb.first_dir, treverse the linked list */
-	sfs_superblock_t *sb = sfs_print_info();
-	dir_bid = sb->first_dir;
+//	sfs_superblock_t *sb = sfs_print_info();
+//	dir_bid = sb->first_dir;
+	dir_bid = sb.first_dir;
 	while (dir_bid != 0) 
 	{
 		sfs_read_block((char*)&dir, dir_bid);
@@ -266,11 +262,12 @@ int sfs_mkdir(char *dirname)
 		// Directory does not exists, create a new one
 		bid = sfs_alloc_block();
 		// Add the new directory to the directory linked list
-		sfs_superblock_t *sb = sfs_print_info();
-		nextBlkid = sb->first_dir;
+//		sfs_superblock_t *sb = sfs_print_info();
+//		nextBlkid = sb->first_dir;
+		nextBlkid = sb.first_dir;
 		if (nextBlkid == 0) {
-			sb->first_dir = bid;
-			sfs_write_block(sb, 0);
+			sb.first_dir = bid;
+			sfs_write_block((char*)&sb, 0);
 		} else {
 			sfs_read_block((char*)&dir, nextBlkid);
 			while(dir.next_dir != 0) {
@@ -408,6 +405,7 @@ int sfs_open(char *dirname, char *name)
 	if (dir_bid == 0)
 	{
 		printf("ERROR- the directory does not exists\n");
+		return -1;
 	}
 	sfs_read_block((char*)&dir, dir_bid);
 
@@ -475,9 +473,11 @@ int sfs_close(int fd)
  */
 int sfs_remove(int fd)
 {
-	blkid frame_bid;
+	blkid frame_bid, next_frame_bid;
 	sfs_dirblock_t dir;
-	int i;
+	sfs_inode_frame_t frame;
+	int i, j;
+	char *tmp;
 
 	/* TODO: update dir */
 	sfs_read_block((char*)&dir, fdtable[fd].dir_bid);
@@ -495,8 +495,28 @@ int sfs_remove(int fd)
 	frame_bid = fdtable[fd].inode.first_frame;
 	while (frame_bid != 0)
 	{
+		sfs_read_block((char*)&frame, frame_bid);
+
+		// Free all the content blocks for each frame
+		for (j = 0; j < SFS_FRAME_COUNT; j++)
+		{
+			tmp = (char*)malloc(BLOCK_SIZE);
+			memset(tmp, 0, BLOCK_SIZE);
+			sfs_write_block(tmp, frame.content[j]);
+			sfs_free_block(frame.content[j]);
+			free(tmp);
+		}
+		next_frame_bid = frame.next;
+		memset(&frame, 0, BLOCK_SIZE);
+		sfs_write_block((char*)&frame, frame_bid);
 		sfs_free_block(frame_bid);
+		frame_bid = next_frame_bid;
 	}
+	
+	// Free the inode
+	memset((char*)&fdtable[fd].inode, 0, BLOCK_SIZE);
+
+	sfs_write_block((char*)&fdtable[fd].inode, fdtable[fd].inode_bid);
 	sfs_free_block(fdtable[fd].inode_bid);
 
 	/* TODO: close the file */
@@ -617,6 +637,9 @@ int sfs_write(int fd, void *buf, int length)
 	} 
 
 	sfs_write_block((char*)&(fdtable[fd].inode), fdtable[fd].inode_bid);
+
+	free(bids);
+
 	return length;
 }
 
@@ -674,6 +697,8 @@ int sfs_read(int fd, void *buf, int length)
 	}
  	// Update variables
 	fdtable[fd].cur += length;
+
+	free(bids);
 
 	return length;
 }
