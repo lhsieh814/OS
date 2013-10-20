@@ -108,9 +108,6 @@ static int testcase4(void)
 	if (tmp != 13) {
 		return 1;
 	}
-printf("tmpbuf = %c%c%c%c%c%c%c%c%c%c%c%c%c\n", tmpbuf[0], tmpbuf[1], tmpbuf[2], 
-	tmpbuf[3], tmpbuf[4], tmpbuf[5], tmpbuf[6], tmpbuf[7], tmpbuf[8], 
-	tmpbuf[9], tmpbuf[10], tmpbuf[11], tmpbuf[12]);
 	return memcmp("hello world!", tmpbuf, 13);
 }
 
@@ -145,20 +142,13 @@ static int testcase6(void)
 	if (tmp != 13) {
 		return 1;
 	}
-printf("#############################\n");
 	sfs_seek(fd, -7, SFS_SEEK_CUR);
 	memset(tmpbuf,0,BLOCK_SIZE);
 	for (i = 0; i < BLOCK_SIZE && !sfs_eof(fd); ++i) {
 		tmp = sfs_read(fd, &tmpbuf[i], 1);
-printf("tmp = %d , i = %d\n", tmp, i);
-printf("tmpbuf = %c%c%c%c%c%c%c\n", tmpbuf[0], tmpbuf[1], tmpbuf[2],
-	tmpbuf[3], tmpbuf[4], tmpbuf[5], tmpbuf[6]);
 		if (tmp != 1)
 			return 1;
 	}
-printf("tmpbuf = %c%c%c%c%c%c%c\n", tmpbuf[0], tmpbuf[1], tmpbuf[2],
-	tmpbuf[3], tmpbuf[4], tmpbuf[5], tmpbuf[6]);
-printf("Before closing\n");
 	sfs_close(fd);
 	return memcmp("world!", tmpbuf, 7);
 }
@@ -212,84 +202,21 @@ static int testcase9(void)
 	int fd;
 	fd = sfs_open("root","file7");
 	sfs_write(fd, "xx", 2);
-sfs_seek(fd, 0, SFS_SEEK_SET);
-memset(tmpbuf,0,BLOCK_SIZE);
-printf("-->tmpbuf = %c%c%c%c%c%c%c%c%c%c%c\n", 
-	tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-	tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9], tmpbuf[10]);
-sfs_read(fd, tmpbuf, 2);
-printf("---------------------------------------\n");
-printf("memcmp1 = %d\n", memcmp("xx", tmpbuf, 2));
-printf("-->tmpbuf = %c%c%c%c%c%c%c%c%c%c%c\n", 
-	tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-	tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9], tmpbuf[10]);
-printf("---------------------------------------\n");
-sfs_seek(fd, +2, SFS_SEEK_SET);
-
 	sfs_seek(fd, +4, SFS_SEEK_CUR);
 	sfs_write(fd, "world", 5);
-sfs_seek(fd, 0, SFS_SEEK_SET);
-memset(tmpbuf,0,BLOCK_SIZE);
-sfs_read(fd, tmpbuf, 11);
-printf("---------------------------------------\n");
-printf("memcmp2 = %d\n", memcmp("xx    world", tmpbuf, 11));
-printf("tmpbuf = [%c%c%c%c%c%c%c%c%c%c%c]\n", 
-	tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-	tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9], tmpbuf[10]);
-printf("---------------------------------------\n");
-sfs_seek(fd, +6, SFS_SEEK_SET);
-
 	sfs_seek(fd, -6, SFS_SEEK_END);
 	sfs_write(fd, " ", 1);
-sfs_seek(fd, 0, SFS_SEEK_SET);
-memset(tmpbuf,0,BLOCK_SIZE);
-sfs_read(fd, tmpbuf, 11);
-printf("---------------------------------------\n");
-printf("memcmp3 = %d\n", memcmp("xx   _world", tmpbuf, 11));
-printf("tmpbuf = [%c%c%c%c%c%c%c%c%c%c%c]\n", 
-	tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-	tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9], tmpbuf[10]);
-printf("---------------------------------------\n");
-sfs_seek(fd, +6, SFS_SEEK_SET);
-
 	sfs_seek(fd, 11, SFS_SEEK_SET);
 	sfs_write(fd, "!", 2);
-sfs_seek(fd, 0, SFS_SEEK_SET);
-memset(tmpbuf,0,BLOCK_SIZE);
-sfs_read(fd, tmpbuf, 11);
-printf("---------------------------------------\n");
-printf("memcmp4 = %d\n", memcmp("xx   _world!", tmpbuf, 11));
-printf("tmpbuf = [%c%c%c%c%c%c%c%c%c%c%c]\n", 
-	tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-	tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9], tmpbuf[10]);
-printf("---------------------------------------\n");
-sfs_seek(fd, +13, SFS_SEEK_SET);
-	
 	sfs_seek(fd, -11, SFS_SEEK_END);
 	sfs_seek(fd, -2, SFS_SEEK_CUR);
 	sfs_write(fd, "hello", 5);
-sfs_seek(fd, 0, SFS_SEEK_SET);
-memset(tmpbuf,0,BLOCK_SIZE);
-sfs_read(fd, tmpbuf, 13);
-printf("---------------------------------------\n");
-printf("memcmp5 = %d\n", memcmp("hello_world!", tmpbuf, 11));
-printf("tmpbuf = [%c%c%c%c%c%c%c%c%c%c%c%c]\n", 
-	tmpbuf[0], tmpbuf[1], tmpbuf[2], tmpbuf[3], tmpbuf[4], tmpbuf[5],
-	tmpbuf[6], tmpbuf[7], tmpbuf[8], tmpbuf[9], tmpbuf[10], tmpbuf[11]);
-printf("---------------------------------------\n");
 	sfs_seek(fd, 0, SFS_SEEK_SET);
 	memset(tmpbuf, 0, BLOCK_SIZE);
 	tmp = sfs_read(fd, tmpbuf, 13);
 	if (tmp != 13)
 		return 1;
 	sfs_close(fd);
-printf("*************************************************************************************\n");
-printf("*************************************************************************************\n");
-sfs_ls();
-sfs_lsdir();
-printf("*************************************************************************************\n");
-printf("*************************************************************************************\n");
-
 	return memcmp("hello world!", tmpbuf, 13);
 }
 
