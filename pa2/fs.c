@@ -47,27 +47,24 @@ static blkid sfs_alloc_block()
 	   set the bit, flush and return the bid
 	*/
 	printf("sfs_alloc_block\n");
-printf("\t-----> freemap = %x, %x\n", freemap[0], freemap[2]);
-printf("\t%d * %d / %d\n", sb.nfreemap_blocks, BLOCK_SIZE, sizeof(u32));
 
 	for (i=0; i<size; i++)
 	{
-		for (k=0; k < (sizeof(u32)*8); k++) 
+		for (k=0; k < (sizeof(u32) * 8); k++) 
 		{
 			j = (freemap[i] & (1 << k));
-			printf("\tk = %d , j = %d\n", k, j);
 			j = j >> k;
 			if (j == 0)
 			{
 				// Found a free block
 				freemap[i] |= (1 << k);
-				printf("\tfound free space at i = %d\n", k);
+				printf("\tfound free space at freemap[%d] i = %d\n", i, k);
 				printf("\t-----> freemap = %x\n", freemap[k]);
 
 				sfs_flush_freemap();
 				printf("\tafter flushing freemap\n");
 
-				return k;
+				return i * sizeof(u32) + k;
 			}
 		}
 	}
@@ -108,20 +105,26 @@ static void sfs_resize_file(int fd, u32 new_size)
 	sfs_inode_frame_t frame;
 	blkid bid, content_bid;
 
+	printf("sfs_resize_file\n");
+	printf("old_size = %d , new_size = %d , old_nframe = %d , new_nframe = %d\n", 
+		old_size, new_size, old_nframe, new_nframe);
+	printf("frame_size = %d\n", frame_size);
 	/* TODO: check if new frames are required */
 	if (new_nframe - old_nframe > 0)
 	{
 		/* TODO: allocate a full frame */
 		frame_bid = sfs_alloc_block();
-		content_bid = sfs_alloc_block();
-		printf("---->content_bid = %d\n", content_bid);
-		frame.content[0] = content_bid;
+		for (j=0; j<SFS_FRAME_COUNT; j++)
+		{
+			content_bid = sfs_alloc_block();
+			printf("content_bid = %d\n", content_bid);
+			frame.content[j] = content_bid;
 
-		// Empty content block
-		char tmp[BLOCK_SIZE];
-		memset(tmp, 0, BLOCK_SIZE);
-		sfs_write_block((char*)&tmp, content_bid);
-
+			// Empty content block
+			char tmp[BLOCK_SIZE];
+			memset(tmp, 0, BLOCK_SIZE);
+			sfs_write_block((char*)&tmp, content_bid);
+		}
 		//for(j=0; j<SFS_FRAME_COUNT; j++)
 		//{
 		// 	content_bid = sfs_alloc_block();
@@ -603,6 +606,7 @@ int sfs_write(int fd, void *buf, int length)
 	char *p = (char *)buf;
 	char tmp[BLOCK_SIZE];
 	u32 cur = fdtable[fd].cur;
+	int frame_size, new_nframe, old_nframe;
 
 	printf("\n******( write [ fd = %d, length = %d ] )******\n\n", fd, length);
 printf("buf = [%c%c%c%c%c]\n", ((char*)buf)[0], ((char*)buf)[1], ((char*)buf)[2], ((char*)buf)[3], ((char*)buf)[4]);
@@ -610,7 +614,14 @@ printf("buf = [%c%c%c%c%c]\n", ((char*)buf)[0], ((char*)buf)[1], ((char*)buf)[2]
 	/* TODO: check if we need to resize */
 	printf("size of inode = %d, cur = %d , frame_bid = %d \n", fdtable[fd].inode.size, cur,
 		fdtable[fd].inode.first_frame);
-	if ((cur+length) > BLOCK_SIZE/*fdtable[fd].inode.size*/) {
+
+	frame_size = BLOCK_SIZE * SFS_FRAME_COUNT;
+	old_nframe =  (fdtable[fd].inode.size + frame_size-1)/frame_size;
+	new_nframe = ((cur+length) + frame_size-1)/frame_size;
+	printf("frame_size = %d , old_nframe = %d , new_nframe = %d\n",
+		frame_size, old_nframe, new_nframe);
+	if (new_nframe > old_nframe) 
+	{
 		// Need to allocate a new frame
 		sfs_resize_file(fd, fdtable[fd].inode.size + length);
 		printf("After resizing inode first frame = %d\n", fdtable[fd].inode.first_frame);
@@ -628,6 +639,9 @@ printf("buf = [%c%c%c%c%c]\n", ((char*)buf)[0], ((char*)buf)[1], ((char*)buf)[2]
 	   to the buffer, consult the hint in the document. Do not forget to 
 	   flush to the disk.
 	*/
+printf("n = %d\n", n);
+printf("bids = %d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", bids[0],bids[1],bids[2],bids[3],bids[4],
+	bids[5],bids[6],bids[7],bids[8],bids[9]);
 	remaining = length;
 	offset = cur % BLOCK_SIZE;
 	if (BLOCK_SIZE - offset > remaining)
@@ -636,11 +650,12 @@ printf("buf = [%c%c%c%c%c]\n", ((char*)buf)[0], ((char*)buf)[1], ((char*)buf)[2]
 	}
 	else
 	{
-		to_copy = fdtable[fd].inode.size - offset;
+		to_copy = BLOCK_SIZE - offset;
 	}
 	for (i=0; i<n; i++)
 	{
-		printf("offset = %d , to_copy = %d , remaining = %d\n", offset, to_copy, remaining);
+		printf("offset = %d , to_copy = %d , remaining = %d, inode_size = %d\n", 
+			offset, to_copy, remaining, fdtable[fd].inode.size);
 		memcpy(tmp + offset , buf, to_copy);
 		printf("write content to bid = %d\n", bids[i]);
 		printf("content = [%c%c%c%c%c%c%c%c%c%c%c%c]\n", tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5],
@@ -711,7 +726,7 @@ printf("n = %d\n", n);
 	}
 	else
 	{
-		to_copy = fdtable[fd].inode.size - offset;
+		to_copy = BLOCK_SIZE - offset;
 	}
 
 	for (i = 0; i < n; i++)
