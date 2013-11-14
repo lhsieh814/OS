@@ -200,6 +200,7 @@ int requests_dispatcher(int client_socket, dfs_cm_client_req_t request)
 
 int main(int argc, char **argv)
 {
+printf("dfs_namenode main\n");
 	int i = 0;
 	for (; i < MAX_DATANODE_NUM; i++)
 		dnlist[i] = NULL;

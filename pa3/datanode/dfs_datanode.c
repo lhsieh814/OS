@@ -103,6 +103,7 @@ void requests_dispatcher(int client_socket, dfs_cli_dn_req_t request)
 
 int main(int argc, char **argv)
 {
+printf("dfs_namenode main\n");
 	if (argc != 5)
 	{
 		printf("usage:datanode local_port namenode_ip id working_directory\n");
