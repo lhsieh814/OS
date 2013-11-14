@@ -7,7 +7,7 @@ int connect_to_nn(char* address, int port)
 	assert(port >= 1 && port <= 65535);
 	//TODO: create a socket and connect it to the server (address, port)
 	//assign return value to client_socket 
-	int client_socket = -1;
+	int client_socket = create_client_tcp_socket(address, port);
 	
 	return client_socket;
 }
@@ -110,6 +110,7 @@ dfs_system_status *send_sysinfo_request(char **argv)
 	int namenode_socket = connect_to_nn(argv[1], atoi(argv[2]));
 	if (namenode_socket < 0)
 	{
+		printf("ERROR connecting client\n");
 		return NULL;
 	}
 	dfs_system_status* ret =  get_system_info(namenode_socket);

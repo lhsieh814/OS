@@ -20,7 +20,7 @@ inline pthread_t * create_thread(void * (*entry_point)(void*), void *args)
 int create_tcp_socket()
 {
 	//TODO:create the socket and return the file descriptor 
-	return -1;
+	return socket(AF_INET, SOCK_STREAM, 0);
 }
 
 /**
@@ -29,10 +29,32 @@ int create_tcp_socket()
  */
 int create_client_tcp_socket(char* address, int port)
 {
+	struct sockaddr_in serv_addr;
+   	struct hostent *server;
+   	int portno, sockfd;
+
 	assert(port >= 0 && port < 65536);
 	int socket = create_tcp_socket();
-	if (socket == INVALID_SOCKET) return 1;
+	if (socket == INVALID_SOCKET) {
+		printf("ERROR client tcp socket invalid\n");
+		return 1;
+	}
 	//TODO: connect it to the destination port
+    server = gethostbyname(&address);
+    if (server == NULL) {
+    	printf("ERROR creating client tcp socket\n");
+    	return -1;
+    }
+
+    memset(&serv_addr, '0', sizeof(serv_addr)); 
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+    	printf("ERROR connecting to client socket\n");
+    	return 1;
+    }
+
 	return socket;
 }
 
@@ -41,10 +63,26 @@ int create_client_tcp_socket(char* address, int port)
  */
 int create_server_tcp_socket(int port)
 {
+    struct sockaddr_in serv_addr; 
+
 	assert(port >= 0 && port < 65536);
 	int socket = create_tcp_socket();
 	if (socket == INVALID_SOCKET) return 1;
+
 	//TODO: listen on local port
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(port); 
+
+    if (bind(socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    	printf("ERROR create server tcp socket\n");
+    	return -1;
+    } 
+
+    listen(socket,5);
+
 	return socket;
 }
 
@@ -58,7 +96,12 @@ void send_data(int socket, void* data, int size)
 	assert(data != NULL);
 	assert(size >= 0);
 	if (socket == INVALID_SOCKET) return;
+
 	//TODO: send data through socket
+	int n = write(socket, data, size);
+	if (n < 0) {
+		printf("ERROR sending data\n");
+	}
 }
 
 /**
@@ -72,5 +115,10 @@ void receive_data(int socket, void* data, int size)
 	assert(data != NULL);
 	assert(size >= 0);
 	if (socket == INVALID_SOCKET) return;
+	
 	//TODO: fetch data via socket
+	int n = read(socket, data, size);
+	if (n < 0) {
+		printf("ERROR receiving data\n");
+	}
 }
