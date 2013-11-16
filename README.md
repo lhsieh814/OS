@@ -1,4 +1,2 @@
 OperatingSystems
 ================
-
-ECSE-427
