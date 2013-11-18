@@ -40,6 +40,8 @@ int create_client_tcp_socket(char* address, int port)
     struct sockaddr_in serv_addr;
     struct hostent *server;
    	int sockfd;
+	struct in_addr addr1;
+	struct in_addr addr2;
 
 	assert(port >= 0 && port < 65536);
 	sockfd = create_tcp_socket();
@@ -55,12 +57,11 @@ int create_client_tcp_socket(char* address, int port)
     	return -1;
     }
 
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
-           (char *)&serv_addr.sin_addr.s_addr,
-                server->h_length);
-    serv_addr.sin_port = htons(port);
+	bzero(&serv_addr, sizeof(serv_addr));
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(port);
+	inet_pton(AF_INET,address,&serv_addr.sin_addr);
+
 printf("4\n");
 
     if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
