@@ -17,9 +17,6 @@ int mainLoop()
 	//TODO: create a server socket and listen on it, you can implement dfs_common.c and call it here
 	server_socket = create_server_tcp_socket(datanode_listen_port);
 	assert (server_socket != INVALID_SOCKET);
-	if (server_socket != INVALID_SOCKET) {
-		printf("ERROR assertion not correct\n");
-	}
 
 	// Listen to requests from the clients
 	for (;;)
@@ -75,6 +72,7 @@ int start(int argc, char **argv)
 	strcpy(working_directory, argv[4]);
 	//start one thread to report to the namenode periodically
 	//TODO: start a thread to report heartbeat
+//	create_thread(heartbeat, NULL);
 
 	return mainLoop();
 }
@@ -110,7 +108,6 @@ void requests_dispatcher(int client_socket, dfs_cli_dn_req_t request)
 
 int main(int argc, char **argv)
 {
-printf("dfs_namenode main\n");
 	if (argc != 5)
 	{
 		printf("usage:datanode local_port namenode_ip id working_directory\n");

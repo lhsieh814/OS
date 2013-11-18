@@ -7,8 +7,9 @@ int connect_to_nn(char* address, int port)
 	assert(port >= 1 && port <= 65535);
 	//TODO: create a socket and connect it to the server (address, port)
 	//assign return value to client_socket 
+printf("client\n");	
 	int client_socket = create_client_tcp_socket(address, port);
-	
+printf("made a client\n");
 	return client_socket;
 }
 
@@ -107,12 +108,14 @@ int send_file_request(char **argv, char *filename, int op_type)
 
 dfs_system_status *send_sysinfo_request(char **argv)
 {
-	int namenode_socket = connect_to_nn(argv[1], atoi(argv[2]));
+	int port =  atoi(argv[2]);
+	int namenode_socket = connect_to_nn(argv[1], port);
 	if (namenode_socket < 0)
 	{
 		printf("ERROR connecting client\n");
 		return NULL;
 	}
+	printf("HELLO\n");
 	dfs_system_status* ret =  get_system_info(namenode_socket);
 	close(namenode_socket);
 	return ret;

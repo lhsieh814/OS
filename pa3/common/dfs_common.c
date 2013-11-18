@@ -1,5 +1,12 @@
 #include "common/dfs_common.h"
 #include <pthread.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h> 
+#include <stdlib.h>
+
 /**
  * create a thread and activate it
  * entry_point - the function exeucted by the thread
@@ -10,6 +17,7 @@ inline pthread_t * create_thread(void * (*entry_point)(void*), void *args)
 {
 	//TODO: create the thread and run it
 	pthread_t * thread;
+	pthread_create(&thread, NULL, entry_point, args);
 
 	return thread;
 }
@@ -29,31 +37,38 @@ int create_tcp_socket()
  */
 int create_client_tcp_socket(char* address, int port)
 {
-	struct sockaddr_in serv_addr;
-   	struct hostent *server;
-   	int portno, sockfd;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+   	int sockfd;
 
 	assert(port >= 0 && port < 65536);
-	int socket = create_tcp_socket();
-	if (socket == INVALID_SOCKET) {
+	sockfd = create_tcp_socket();
+	if (sockfd == INVALID_SOCKET) {
 		printf("ERROR client tcp socket invalid\n");
-		return 1;
+		return -1;
 	}
+
 	//TODO: connect it to the destination port
-    server = gethostbyname(&address);
+    server = gethostbyname(address);
     if (server == NULL) {
     	printf("ERROR creating client tcp socket\n");
     	return -1;
     }
 
-    memset(&serv_addr, '0', sizeof(serv_addr)); 
+    bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
+    bcopy((char *)server->h_addr, 
+           (char *)&serv_addr.sin_addr.s_addr,
+                server->h_length);
     serv_addr.sin_port = htons(port);
+printf("4\n");
 
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
-    	printf("ERROR connecting to client socket\n");
-    	return 1;
-    }
+    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+       printf("\n Error : Connect Failed \n");
+       return -1;
+    } 
+printf("5\n");
 
 	return socket;
 }
