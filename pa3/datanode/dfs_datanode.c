@@ -48,10 +48,12 @@ static void *heartbeat()
 	{
 		int heartbeat_socket = -1;
 		//TODO: create a socket to the namenode, assign file descriptor id to heartbeat_socket
-		//Where port 50030 is my chosen port for heartbeat
-		heartbeat_socket = create_client_tcp_socket("127.0.0.1", 50030);	
+		//Where port 50040 is my chosen port for heartbeat
+		heartbeat_socket = create_client_tcp_socket("127.0.0.1", datanode_listen_port);	
 		assert(heartbeat_socket != INVALID_SOCKET);
 		//send datanode_status to namenode
+		send_data(heartbeat_socket, &datanode_status, sizeof(datanode_status));
+
 		close(heartbeat_socket);
 		sleep(HEARTBEAT_INTERVAL);
 	}
@@ -74,7 +76,7 @@ int start(int argc, char **argv)
 	strcpy(working_directory, argv[4]);
 	//start one thread to report to the namenode periodically
 	//TODO: start a thread to report heartbeat
-//	create_thread(heartbeat, NULL);
+	create_thread(heartbeat, NULL);
 
 	return mainLoop();
 }

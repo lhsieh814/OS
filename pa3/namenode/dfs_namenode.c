@@ -59,10 +59,11 @@ int start(int argc, char **argv)
 
 	//TODO:create a thread to handle heartbeat service
 	//you can implement the related function in dfs_common.c and call it here
-//	create_thread(heartbeatService, NULL);
+	create_thread(heartbeatService, NULL);
 
 	//TODO: create a socket to listen the client requests and replace the value of server_socket with the socket's fd
-	int server_socket = create_server_tcp_socket(argv[2]);
+	int port = atoi(argv[1]);
+	int server_socket = create_server_tcp_socket(port);
 
 	assert(server_socket != INVALID_SOCKET);
 
@@ -75,14 +76,23 @@ int register_datanode(int heartbeat_socket)
 	{
 		int datanode_socket = -1;
 		//TODO: accept connection from DataNodes and assign return value to datanode_socket;
+		sockaddr_in datanode_address;
+		unsigned int datanode_address_length = sizeof(datanode_address);
+		datanode_socket = accept(heartbeat_socket, (struct sockaddr*)&datanode_address, &datanode_address_length); 
 		assert(datanode_socket != INVALID_SOCKET);
+
 		dfs_cm_datanode_status_t datanode_status;
 		//TODO: receive datanode's status via datanode_socket
+		receive_data(datanode_socket, &datanode_status, sizeof(datanode_status));
 
 		if (datanode_status.datanode_id < MAX_DATANODE_NUM)
 		{
 			//TODO: fill dnlist
 			//principle: a datanode with id of n should be filled in dnlist[n - 1] (n is always larger than 0)
+			dnlist[datanode_status.datanode_id - 1]->dn_id = datanode_status.datanode_id;
+			dnlist[datanode_status.datanode_id - 1]->port = datanode_status.datanode_listen_port;
+			strcpy(dnlist[datanode_status.datanode_id - 1]->ip, gethostbyname(datanode_address));
+
 			safeMode = 0;
 		}
 		close(datanode_socket);

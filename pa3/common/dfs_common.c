@@ -60,16 +60,13 @@ int create_client_tcp_socket(char* address, int port)
 	bzero(&serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(port);
-	inet_pton(AF_INET,address,&serv_addr.sin_addr);
-
-printf("4\n");
+	serv_addr.sin_addr.s_addr = inet_addr(address);
 
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
     {
        printf("\n Error : Client Connection Failed \n");
        return -1;
     } 
-printf("5\n");
 
 	return socket;
 }
@@ -82,8 +79,8 @@ int create_server_tcp_socket(int port)
     struct sockaddr_in serv_addr; 
 
 	assert(port >= 0 && port < 65536);
-	int socket = create_tcp_socket();
-	if (socket == INVALID_SOCKET) return 1;
+	int sockfd = create_tcp_socket();
+	if (sockfd == INVALID_SOCKET) return 1;
 
 	//TODO: listen on local port
     memset(&serv_addr, '0', sizeof(serv_addr));
@@ -92,14 +89,14 @@ int create_server_tcp_socket(int port)
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(port); 
 
-    if (bind(socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+    if (bind(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
     	printf("ERROR create server tcp socket\n");
     	return -1;
     } 
 
-    listen(socket,5);
+    listen(sockfd,5);
 
-	return socket;
+	return sockfd;
 }
 
 /**
