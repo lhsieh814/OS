@@ -64,9 +64,9 @@ int create_client_tcp_socket(char* address, int port)
 
 printf("4\n");
 
-    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
     {
-       printf("\n Error : Connect Failed \n");
+       printf("\n Error : Client Connection Failed \n");
        return -1;
     } 
 printf("5\n");
