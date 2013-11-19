@@ -5,7 +5,7 @@
 dfs_datanode_t* dnlist[MAX_DATANODE_NUM];
 dfs_cm_file_t* file_images[MAX_FILE_COUNT];
 int fileCount;
-int dncnt;
+int dncnt = 0;
 int safeMode = 1;
 
 int mainLoop(int server_socket)
@@ -28,7 +28,7 @@ int mainLoop(int server_socket)
 
 		dfs_cm_client_req_t request;
 		//TODO: receive requests from client and fill it in request
-		receive_data(client_socket, request.file_name, request.file_size);
+		receive_data(client_socket, &request, sizeof(request));
 
 		requests_dispatcher(client_socket, request);
 		close(client_socket);
@@ -64,7 +64,7 @@ int start(int argc, char **argv)
 	//TODO: create a socket to listen the client requests and replace the value of server_socket with the socket's fd
 	int port = atoi(argv[1]);
 	int server_socket = create_server_tcp_socket(port);
-
+printf("namenode server socket = %d\n", server_socket);
 	assert(server_socket != INVALID_SOCKET);
 
 	return mainLoop(server_socket);
@@ -84,15 +84,22 @@ int register_datanode(int heartbeat_socket)
 		dfs_cm_datanode_status_t datanode_status;
 		//TODO: receive datanode's status via datanode_socket
 		receive_data(datanode_socket, &datanode_status, sizeof(datanode_status));
-
 		if (datanode_status.datanode_id < MAX_DATANODE_NUM)
 		{
 			//TODO: fill dnlist
 			//principle: a datanode with id of n should be filled in dnlist[n - 1] (n is always larger than 0)
-			dnlist[datanode_status.datanode_id - 1]->dn_id = datanode_status.datanode_id;
-			dnlist[datanode_status.datanode_id - 1]->port = datanode_status.datanode_listen_port;
-			strcpy(dnlist[datanode_status.datanode_id - 1]->ip, gethostbyname(datanode_address));
+printf("Got status from datanode\n");
+			dfs_datanode_t datanode;
+			datanode.dn_id = datanode_status.datanode_id;
+printf("datanode id = %d\n", datanode.dn_id);
+			datanode.port = datanode_status.datanode_listen_port;
+			strcpy(datanode.ip, "127.0.0.1");
 
+			if (dnlist[datanode_status.datanode_id - 1] == NULL) {
+				dncnt ++;
+			}
+			dnlist[datanode_status.datanode_id - 1] = &datanode;
+			
 			safeMode = 0;
 		}
 		close(datanode_socket);
@@ -127,7 +134,7 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 		if (file_image == end_file_image) return 1;
 		// Create the file entry
 		*file_image = (dfs_cm_file_t*)malloc(sizeof(dfs_cm_file_t));
-		memset(*file_image, 0, sizeof(*file_image));
+		memset(*file_image, 0, sizeof(**file_image));
 		strcpy((*file_image)->filename, request.file_name);
 		(*file_image)->file_size = request.file_size;
 		(*file_image)->blocknum = 0;
@@ -168,8 +175,15 @@ int get_file_location(int client_socket, dfs_cm_client_req_t request)
 void get_system_information(int client_socket, dfs_cm_client_req_t request)
 {
 	assert(client_socket != INVALID_SOCKET);
+
 	//TODO:fill the response and send back to the client
 	dfs_system_status response;
+	response.datanode_num = dncnt;
+printf("num of datanodes = %d\n", dncnt);
+	memcpy(response.datanodes, dnlist, MAX_DATANODE_NUM * sizeof(dfs_datanode_t));
+
+	send_data(client_socket, &response, sizeof(response));
+
 }
 
 int get_file_update_point(int client_socket, dfs_cm_client_req_t request)

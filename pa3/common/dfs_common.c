@@ -17,6 +17,7 @@ inline pthread_t * create_thread(void * (*entry_point)(void*), void *args)
 {
 	//TODO: create the thread and run it
 	pthread_t * thread;
+	thread = malloc(sizeof(pthread_t));
 	pthread_create(&thread, NULL, entry_point, args);
 
 	return thread;
@@ -68,7 +69,7 @@ int create_client_tcp_socket(char* address, int port)
        return -1;
     } 
 
-	return socket;
+	return sockfd;
 }
 
 /**
@@ -114,6 +115,8 @@ void send_data(int socket, void* data, int size)
 	int n = write(socket, data, size);
 	if (n < 0) {
 		printf("ERROR sending data\n");
+	} else {
+		printf("sent data\n");
 	}
 }
 

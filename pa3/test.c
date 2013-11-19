@@ -12,10 +12,21 @@ int test_case_0(char **argv, int op_type)
 		printf("BAD\n");
 		return 1;
 	}
+printf("num of datanodes = %d\n", sys_stat->datanode_num);	
+	if (sys_stat->datanode_num == 1) 
+	{
+		printf("1 datanode\n");
+	} else
 	if (sys_stat->datanode_num == 2) 
 	{
 		free(sys_stat);
 		return 0;
+	} else {
+		printf("Neither, it is %d\n", sys_stat->datanode_num);
+		int i = 1;
+		if (i == 1) {
+			printf("it works...\n");
+		}
 	}
 	return 1;
 }
@@ -299,7 +310,7 @@ void append_data(char *out_file, int append_size)
 		fputc(c, fp);
 	}
 	fclose(fp);
-	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 6));
+	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 7));
 	sprintf(cmd, "cp %s %s_1", out_file, out_file);
 	system(cmd);
 	free(cmd);
@@ -316,7 +327,7 @@ void generate_data(char *out_file, int file_size)
 		fputc(c, fp);
 	}
 	fclose(fp);
-	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 6));
+	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 7));
 	sprintf(cmd, "cp %s %s_1", out_file, out_file);
 	system(cmd);
 	free(cmd);

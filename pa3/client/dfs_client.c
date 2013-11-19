@@ -8,8 +8,9 @@ int connect_to_nn(char* address, int port)
 	//TODO: create a socket and connect it to the server (address, port)
 	//assign return value to client_socket 
 	int client_socket = create_client_tcp_socket(address, port);
+printf("client socket = %d\n", client_socket);
 	assert(client_socket != INVALID_SOCKET);
-	
+
 	return client_socket;
 }
 
@@ -77,9 +78,14 @@ dfs_system_status *get_system_info(int namenode_socket)
 	assert(namenode_socket != INVALID_SOCKET);
 	//TODO fill the result and send 
 	dfs_cm_client_req_t request;
-	
+	request.req_type = 2;
+	send_data(namenode_socket, &request, sizeof(request));
+
 	//TODO: get the response
 	dfs_system_status *response; 
+	receive_data(namenode_socket, response, sizeof(response));
+
+printf("client: dncnt = %d\n", response->datanode_num);
 
 	return response;		
 }
@@ -116,6 +122,7 @@ dfs_system_status *send_sysinfo_request(char **argv)
 		return NULL;
 	}
 	dfs_system_status* ret =  get_system_info(namenode_socket);
+printf("count in send_sysinfo_request = %d\n", ret->datanode_num);	
 	close(namenode_socket);
 	return ret;
 }
