@@ -6,27 +6,15 @@
 //test connection between datanode and namenode
 int test_case_0(char **argv, int op_type)
 {
-	printf("START TEST CASE 0\n");
 	dfs_system_status *sys_stat = NULL;
-	if ((sys_stat = send_sysinfo_request(argv)) == NULL) {
-		printf("BAD\n");
-		return 1;
-	}
+	if ((sys_stat = send_sysinfo_request(argv)) == NULL) return 1;
+
 printf("num of datanodes = %d\n", sys_stat->datanode_num);	
-	if (sys_stat->datanode_num == 1) 
-	{
-		printf("1 datanode\n");
-	} else
+
 	if (sys_stat->datanode_num == 2) 
 	{
 		free(sys_stat);
 		return 0;
-	} else {
-		printf("Neither, it is %d\n", sys_stat->datanode_num);
-		int i = 1;
-		if (i == 1) {
-			printf("it works...\n");
-		}
 	}
 	return 1;
 }
@@ -248,14 +236,8 @@ int test_case_6(char **argv, int op_type)
 
 int test_case_7(char **argv) 
 {
-	char **args = (char **) malloc(sizeof(char *) * 3);
-	args[0] = argv[0];
-	args[1] = argv[1];
-	args[2] = "local_file";
 	int r2 = test_case_2(argv, 1024);
-	args[2] = "local_file_medium";
 	int r6 = test_case_4(argv, 4096);
-	args[2] = "local_file_large";
 	int r8	= test_case_6(argv, 8192);
 	return r2 || r6 || r8;
 }
@@ -340,34 +322,25 @@ int main(int argc, char **argv)
 	char *result[2];
 	result[0] = "PASS";
 	result[1] = "FAILED";
-printf("--------------------------------------------------------------------------\n");
+	
 	printf("TEST CASE 0:%s\n", result[test_case_0(argv, 2)]);
 	//generate data
 	//can contact to single datanode
 	generate_data("local_file", 1024);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 1:%s\n", result[test_case_1(argv, 1)]);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 2:%s\n", result[test_case_2(argv, 0)]);
 	//can contact to two datanodes	
 	generate_data("local_file_medium", 4096);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 3:%s\n", result[test_case_3(argv, 1)]);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 4:%s\n", result[test_case_4(argv, 0)]);
 	//can handle chunk pieces
 	generate_data("local_file_large", 8192);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 5:%s\n", result[test_case_5(argv, 1)]);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 6:%s\n", result[test_case_6(argv, 0)]);
-printf("--------------------------------------------------------------------------\n");
 	//check every file is stored correctly
 	printf("TEST CASE 7:%s\n", result[test_case_7(argv)]);
 	//modify the file
 	append_data("local_file", 1024);
-printf("--------------------------------------------------------------------------\n");
 	printf("TEST CASE 8:%s\n", result[test_case_8(argv, 3)]);
-printf("--------------------------------------------------------------------------\n");
 	return 0;
 }
