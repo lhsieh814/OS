@@ -64,7 +64,6 @@ int start(int argc, char **argv)
 	//TODO: create a socket to listen the client requests and replace the value of server_socket with the socket's fd
 	int port = atoi(argv[1]);
 	int server_socket = create_server_tcp_socket(port);
-printf("namenode server socket = %d\n", server_socket);
 	assert(server_socket != INVALID_SOCKET);
 
 	return mainLoop(server_socket);
@@ -148,9 +147,43 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 
 	//TODO:Assign data blocks to datanodes, round-robin style (see the Documents)
 
+	int i;
+	for (i = 0; i < block_count; i++)
+	{
+		while (dnlist[next_data_node_index] == NULL)
+		{
+			// increase index (round robin)
+			if (next_data_node_index == MAX_DATANODE_NUM) { 
+				next_data_node_index = 0;
+			} else {
+				next_data_node_index++;
+			}
+		}
+
+		if (dnlist[next_data_node_index] != NULL) {
+			// assign data block to datanode
+
+			dfs_cm_block_t block;
+			strcpy(block.owner_name, request.file_name);
+			block.dn_id = dnlist[next_data_node_index]->dn_id;
+
+			(*file_image)->block_list[i] = block;
+
+			// increase index (round robin)
+			if (next_data_node_index == MAX_DATANODE_NUM) { 
+				next_data_node_index = 0;
+			} else {
+				next_data_node_index++;
+			}
+		} 
+	}
+
 	dfs_cm_file_res_t response;
 	memset(&response, 0, sizeof(response));
+
 	//TODO: fill the response and send it back to the client
+	response.query_result = (**file_image);
+	send_data(client_socket, &response, sizeof(response));
 
 	return 0;
 }

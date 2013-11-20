@@ -41,13 +41,27 @@ int push_file(int namenode_socket, const char* local_path)
 
 	// Create the push request (write)
 	dfs_cm_client_req_t request;
-
+    memset(&request, '0', sizeof(request));
 	//TODO:fill the fields in request and 
-	
+	request.req_type = 1;
+	strcpy(request.file_name, local_path);
+	request.file_size = sizeof(file);
+	send_data(namenode_socket, &request, sizeof(request));
+
 	//TODO:Receive the response
 	dfs_cm_file_res_t response;
+	receive_data(namenode_socket, &response, sizeof(response));
 
 	//TODO: Send blocks to datanodes one by one
+	dfs_cm_file_t file_desc = response.query_result;
+	int i;
+	for (i = 0; i < file_desc.blocknum; i++)
+	{
+		dfs_cm_block_t block = file_desc.block_list[i];
+		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
+
+		send_data(datanode_socket, &block, sizeof(block));
+	}
 
 	fclose(file);
 	return 0;
@@ -83,7 +97,7 @@ dfs_system_status *get_system_info(int namenode_socket)
 	send_data(namenode_socket, &request, sizeof(request));
 
 	//TODO: get the response
-	dfs_system_status *response; 
+	dfs_system_status *response = (dfs_system_status *) malloc(sizeof(dfs_system_status));
 	receive_data(namenode_socket, response, sizeof(response));
 
 	return response;		
