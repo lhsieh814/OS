@@ -116,7 +116,7 @@ void send_data(int socket, void* data, int size)
 	if (n < 0) {
 		printf("ERROR sending data\n");
 	} else {
-		printf("sent data\n");
+		printf("Sent data\n");
 	}
 }
 
@@ -136,5 +136,7 @@ void receive_data(int socket, void* data, int size)
 	int n = read(socket, data, size);
 	if (n < 0) {
 		printf("ERROR receiving data\n");
+	} else {
+		printf("Received data\n");
 	}
 }

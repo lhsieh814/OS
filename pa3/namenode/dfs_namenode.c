@@ -166,6 +166,8 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 			dfs_cm_block_t block;
 			strcpy(block.owner_name, request.file_name);
 			block.dn_id = dnlist[next_data_node_index]->dn_id;
+			strcpy(block.loc_ip, dnlist[next_data_node_index]->ip);
+			block.loc_port = dnlist[next_data_node_index]->port;
 
 			(*file_image)->block_list[i] = block;
 
