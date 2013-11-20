@@ -8,7 +8,6 @@ int connect_to_nn(char* address, int port)
 	//TODO: create a socket and connect it to the server (address, port)
 	//assign return value to client_socket 
 	int client_socket = create_client_tcp_socket(address, port);
-printf("client socket = %d\n", client_socket);
 	assert(client_socket != INVALID_SOCKET);
 
 	return client_socket;
@@ -40,7 +39,7 @@ int push_file(int namenode_socket, const char* local_path)
 	FILE* file = fopen(local_path, "rb");
 	assert(file != NULL);
 
-	// Create the push request
+	// Create the push request (write)
 	dfs_cm_client_req_t request;
 
 	//TODO:fill the fields in request and 
@@ -59,7 +58,7 @@ int pull_file(int namenode_socket, const char *filename)
 	assert(namenode_socket != INVALID_SOCKET);
 	assert(filename != NULL);
 
-	//TODO: fill the request, and send
+	//TODO: fill the request, and send (read request)
 	dfs_cm_client_req_t request;
 
 	//TODO: Get the response
@@ -78,14 +77,14 @@ dfs_system_status *get_system_info(int namenode_socket)
 	assert(namenode_socket != INVALID_SOCKET);
 	//TODO fill the result and send 
 	dfs_cm_client_req_t request;
+    memset(&request, '0', sizeof(request));
 	request.req_type = 2;
+
 	send_data(namenode_socket, &request, sizeof(request));
 
 	//TODO: get the response
 	dfs_system_status *response; 
 	receive_data(namenode_socket, response, sizeof(response));
-
-printf("client: dncnt = %d\n", response->datanode_num);
 
 	return response;		
 }
@@ -114,15 +113,13 @@ int send_file_request(char **argv, char *filename, int op_type)
 
 dfs_system_status *send_sysinfo_request(char **argv)
 {
-	int port =  atoi(argv[2]);
-	int namenode_socket = connect_to_nn(argv[1], port);
+	int namenode_socket = connect_to_nn(argv[1], atoi(argv[2]));
 	if (namenode_socket < 0)
 	{
 		printf("ERROR connecting client\n");
 		return NULL;
 	}
 	dfs_system_status* ret =  get_system_info(namenode_socket);
-printf("count in send_sysinfo_request = %d\n", ret->datanode_num);	
 	close(namenode_socket);
 	return ret;
 }
