@@ -29,8 +29,8 @@ int mainLoop(int server_socket)
 		dfs_cm_client_req_t request;
 		//TODO: receive requests from client and fill it in request
 		receive_data(client_socket, &request, sizeof(request));
-
 		requests_dispatcher(client_socket, request);
+
 		close(client_socket);
 	}
 	return 0;

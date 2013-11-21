@@ -22,14 +22,16 @@ int mainLoop()
 	for (;;)
 	{
 		sockaddr_in client_address;
+		unsigned int client_address_length = sizeof(client_address);
+		int client_socket = -1;
 
 		//TODO: accept the client request
-		int client_socket = accept(server_socket, (struct sockaddr*)&client_address, sizeof(&client_address)); 
+		client_socket = accept(server_socket, (struct sockaddr*)&client_address, &client_address_length); 
 		assert(client_socket != INVALID_SOCKET);
 
-		//TODO: receive data from client_socket, and fill it to request
 		dfs_cli_dn_req_t request;
-		receive_data(client_socket, request.block.content, DFS_BLOCK_SIZE);
+		//TODO: receive data from client_socket, and fill it to request
+		receive_data(client_socket, &request, sizeof(request));
 		requests_dispatcher(client_socket, request);
 
 		close(client_socket);
