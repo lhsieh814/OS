@@ -90,8 +90,8 @@ int register_datanode(int heartbeat_socket)
 printf("Got status from datanode\n");
 			dfs_datanode_t datanode;
 			datanode.dn_id = datanode_status.datanode_id;
-printf("datanode id = %d\n", datanode.dn_id);
 			datanode.port = datanode_status.datanode_listen_port;
+printf("datanode id = %d , port = %d\n", datanode.dn_id, datanode.port);
 			strcpy(datanode.ip, "127.0.0.1");
 
 			if (dnlist[datanode_status.datanode_id - 1] == NULL) {
@@ -112,7 +112,7 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 
 	dfs_cm_file_t** end_file_image = file_images + MAX_FILE_COUNT;
 	dfs_cm_file_t** file_image = file_images;
-	
+printf("dnlist[0] = %d, %d | dnlist[1] = %d, %d\n", dnlist[0]->dn_id, dnlist[0]->port, dnlist[1]->dn_id, dnlist[1]->port);
 	// Try to find if there is already an entry for that file
 	while (file_image != end_file_image)
 	{
@@ -123,6 +123,7 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 	if (file_image == end_file_image)
 	{
 		// There is no entry for that file, find an empty location to create one
+printf("no entry for file - create new one\n");
 		file_image = file_images;
 		while (file_image != end_file_image)
 		{
@@ -144,7 +145,7 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 	int first_unassigned_block_index = (*file_image)->blocknum;
 	(*file_image)->blocknum = block_count;
 	int next_data_node_index = 0;
-
+printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, first_unassigned_block_index);
 	//TODO:Assign data blocks to datanodes, round-robin style (see the Documents)
 
 	int i;
@@ -153,21 +154,23 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 		while (dnlist[next_data_node_index] == NULL)
 		{
 			// increase index (round robin)
-			if (next_data_node_index == MAX_DATANODE_NUM) { 
+			if (next_data_node_index == MAX_DATANODE_NUM-1) { 
 				next_data_node_index = 0;
 			} else {
 				next_data_node_index++;
 			}
 		}
-
+printf("i = %d , next_data_node_index = %d\n", i, next_data_node_index);
 		if (dnlist[next_data_node_index] != NULL) {
 			// assign data block to datanode
-
 			dfs_cm_block_t block;
 			strcpy(block.owner_name, request.file_name);
 			block.dn_id = dnlist[next_data_node_index]->dn_id;
 			strcpy(block.loc_ip, dnlist[next_data_node_index]->ip);
 			block.loc_port = dnlist[next_data_node_index]->port;
+printf("ip = %c%c%c , port = %d , dn_id = %d\n", (dnlist[next_data_node_index]->ip)[0],
+	(dnlist[next_data_node_index]->ip)[1], (dnlist[next_data_node_index]->ip)[2], 
+	dnlist[next_data_node_index]->port, dnlist[next_data_node_index]->dn_id);
 
 			(*file_image)->block_list[i] = block;
 
@@ -177,6 +180,7 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 			} else {
 				next_data_node_index++;
 			}
+printf("next_data_node_index = %d\n", next_data_node_index);
 		} 
 	}
 

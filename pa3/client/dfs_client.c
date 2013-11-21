@@ -54,13 +54,17 @@ int push_file(int namenode_socket, const char* local_path)
 
 	//TODO: Send blocks to datanodes one by one
 	dfs_cm_file_t file_desc = response.query_result;
+printf("blocknum = %d\n", file_desc.blocknum);
 	int i;
 	for (i = 0; i < file_desc.blocknum; i++)
 	{
 		dfs_cm_block_t block = file_desc.block_list[i];
 		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
-
-		send_data(datanode_socket, &block, sizeof(block));
+block.block_id = 0;
+		dfs_cli_dn_req_t datanode_req;
+		datanode_req.op_type = 1;
+		datanode_req.block = block;
+		send_data(datanode_socket, &datanode_req, sizeof(block));
 	}
 
 	fclose(file);
