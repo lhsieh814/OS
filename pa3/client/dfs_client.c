@@ -59,8 +59,15 @@ printf("blocknum = %d\n", file_desc.blocknum);
 	for (i = 0; i < file_desc.blocknum; i++)
 	{
 		dfs_cm_block_t block = file_desc.block_list[i];
-		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
+
+//******************** HACK *********************		
+block.loc_port = 50060;
+strcpy(block.loc_ip, "127.0.0.1");		
 block.block_id = 0;
+//***********************************************		
+
+		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
+
 		dfs_cli_dn_req_t datanode_req;
 		datanode_req.op_type = 1;
 		datanode_req.block = block;

@@ -88,11 +88,15 @@ int register_datanode(int heartbeat_socket)
 			//TODO: fill dnlist
 			//principle: a datanode with id of n should be filled in dnlist[n - 1] (n is always larger than 0)
 printf("Got status from datanode\n");
-			dfs_datanode_t datanode;
-			datanode.dn_id = datanode_status.datanode_id;
-			datanode.port = datanode_status.datanode_listen_port;
-printf("datanode id = %d , port = %d\n", datanode.dn_id, datanode.port);
-			strcpy(datanode.ip, "127.0.0.1");
+			dfs_datanode_t* datanode = dnlist[datanode_status.datanode_id - 1];
+			datanode = (dfs_datanode_t*)malloc(sizeof(dfs_datanode_t));
+			memset(datanode, 0, sizeof(datanode));
+printf("HERE\n");
+			datanode->dn_id = datanode_status.datanode_id;
+			datanode->port = datanode_status.datanode_listen_port;
+			strcpy(datanode->ip, "127.0.0.1");
+
+printf("datanode id = %d , port = %d\n", datanode->dn_id, datanode->port);
 
 			if (dnlist[datanode_status.datanode_id - 1] == NULL) {
 				dncnt ++;
@@ -145,13 +149,16 @@ printf("no entry for file - create new one\n");
 	int first_unassigned_block_index = (*file_image)->blocknum;
 	(*file_image)->blocknum = block_count;
 	int next_data_node_index = 0;
-printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, first_unassigned_block_index);
+
 	//TODO:Assign data blocks to datanodes, round-robin style (see the Documents)
+printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, first_unassigned_block_index);
 
 	int i;
 	for (i = 0; i < block_count; i++)
 	{
-		while (dnlist[next_data_node_index] == NULL)
+		dfs_datanode_t* datanode = dnlist[next_data_node_index];
+
+		while (datanode == NULL)
 		{
 			// increase index (round robin)
 			if (next_data_node_index == MAX_DATANODE_NUM-1) { 
@@ -161,18 +168,16 @@ printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, fi
 			}
 		}
 printf("i = %d , next_data_node_index = %d\n", i, next_data_node_index);
-		if (dnlist[next_data_node_index] != NULL) {
+
+		if (datanode != NULL) {
 			// assign data block to datanode
 			dfs_cm_block_t block;
 			strcpy(block.owner_name, request.file_name);
-			block.dn_id = dnlist[next_data_node_index]->dn_id;
-			strcpy(block.loc_ip, dnlist[next_data_node_index]->ip);
-			block.loc_port = dnlist[next_data_node_index]->port;
-printf("ip = %c%c%c , port = %d , dn_id = %d\n", (dnlist[next_data_node_index]->ip)[0],
-	(dnlist[next_data_node_index]->ip)[1], (dnlist[next_data_node_index]->ip)[2], 
-	dnlist[next_data_node_index]->port, dnlist[next_data_node_index]->dn_id);
+			block.dn_id = datanode->dn_id;
+			strcpy(block.loc_ip, datanode->ip);
+			block.loc_port = datanode->port;
 
-			(*file_image)->block_list[i] = block;
+			(**file_image).block_list[i] = block;
 
 			// increase index (round robin)
 			if (next_data_node_index == MAX_DATANODE_NUM) { 
