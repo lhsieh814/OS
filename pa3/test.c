@@ -40,6 +40,8 @@ int test_case_1(char **argv, int op_type)
 	memset(local_buf, 0, DFS_BLOCK_SIZE);
 	fread(buf, DFS_BLOCK_SIZE, 1, fp);
 	fread(local_buf, DFS_BLOCK_SIZE, 1, local_fp);
+printf("Original :\n%s\n", local_buf);
+printf("Copy :\n%s\n", buf);	
 	if (memcmp(local_buf, buf, DFS_BLOCK_SIZE) != 0) 
 	{
 		ret = 1;

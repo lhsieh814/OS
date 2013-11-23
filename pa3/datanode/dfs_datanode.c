@@ -95,7 +95,7 @@ int read_block(int client_socket, const dfs_cli_dn_req_t *request)
 
 int create_block(const dfs_cli_dn_req_t* request)
 {
-printf("%c%c%c%c\n", working_directory[0], working_directory[1], working_directory[2], working_directory[3]);
+printf("%s\n", working_directory);
 printf("block_id = %d\n", request->block.block_id);
 	int i = ext_write_block(request->block.owner_name, request->block.block_id, (void *)request->block.content);
 printf("i = %d\n", i);	

@@ -42,9 +42,15 @@ int push_file(int namenode_socket, const char* local_path)
 	// Create the push request (write)
 	dfs_cm_client_req_t request;
     memset(&request, '0', sizeof(request));
+
 	//TODO:fill the fields in request and 
 	request.req_type = 1;
 	strcpy(request.file_name, local_path);
+	// Get the size of the file
+	fseek(file, 0L, SEEK_END);
+	int size = ftell(file);
+	fseek(file, 0L, SEEK_SET);
+printf("size of file = %d\n", size);	
 	request.file_size = sizeof(file);
 	send_data(namenode_socket, &request, sizeof(request));
 
@@ -61,16 +67,23 @@ printf("blocknum = %d\n", file_desc.blocknum);
 		dfs_cm_block_t block = file_desc.block_list[i];
 
 //******************** HACK *********************		
+memset(&block, '0', sizeof(block));
+strcpy(block.owner_name, local_path);
 block.loc_port = 50060;
 strcpy(block.loc_ip, "127.0.0.1");		
 block.block_id = 0;
+memset(block.content, 0, DFS_BLOCK_SIZE);
+fread(block.content, size, 1, file);
 //***********************************************		
 
 		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
 
 		dfs_cli_dn_req_t datanode_req;
+		memset(&datanode_req, '0', sizeof(datanode_req));
 		datanode_req.op_type = 1;
 		datanode_req.block = block;
+printf("-> Send data to datanode : op_type = %d , block.owner_name = %s , block.block_id = %d , block.content = \n%s\n",
+	datanode_req.op_type, datanode_req.block.owner_name, datanode_req.block.block_id, datanode_req.block.content);
 		send_data(datanode_socket, &datanode_req, sizeof(block));
 	}
 
