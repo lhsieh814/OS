@@ -97,6 +97,7 @@ int create_block(const dfs_cli_dn_req_t* request)
 {
 printf("%s\n", working_directory);
 printf("block_id = %d\n", request->block.block_id);
+printf("content = \n%s\n", request->block.content);
 	int i = ext_write_block(request->block.owner_name, request->block.block_id, (void *)request->block.content);
 printf("i = %d\n", i);	
 	return 0;

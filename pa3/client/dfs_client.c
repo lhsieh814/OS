@@ -36,7 +36,7 @@ int push_file(int namenode_socket, const char* local_path)
 {
 	assert(namenode_socket != INVALID_SOCKET);
 	assert(local_path != NULL);
-	FILE* file = fopen(local_path, "rb");
+	FILE *file = fopen(local_path, "rb");
 	assert(file != NULL);
 
 	// Create the push request (write)
@@ -61,19 +61,26 @@ printf("size of file = %d\n", size);
 	//TODO: Send blocks to datanodes one by one
 	dfs_cm_file_t file_desc = response.query_result;
 printf("blocknum = %d\n", file_desc.blocknum);
+//******************** HACK *********************	
+file_desc.blocknum = 1;	
+//***********************************************
 	int i;
 	for (i = 0; i < file_desc.blocknum; i++)
 	{
 		dfs_cm_block_t block = file_desc.block_list[i];
 
-//******************** HACK *********************		
+//******************** HACK *********************	
 memset(&block, '0', sizeof(block));
 strcpy(block.owner_name, local_path);
 block.loc_port = 50060;
 strcpy(block.loc_ip, "127.0.0.1");		
 block.block_id = 0;
-memset(block.content, 0, DFS_BLOCK_SIZE);
-fread(block.content, size, 1, file);
+char *buf = (char *)malloc(sizeof(char)*DFS_BLOCK_SIZE);
+memset(buf, 0, sizeof(char)*DFS_BLOCK_SIZE);
+fread(buf, DFS_BLOCK_SIZE, 1, file);
+printf("content before =\n%s\n", block.content);
+printf("buf = \n%s\n", buf);
+strncpy(block.content, buf, DFS_BLOCK_SIZE);
 //***********************************************		
 
 		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
@@ -84,7 +91,7 @@ fread(block.content, size, 1, file);
 		datanode_req.block = block;
 printf("-> Send data to datanode : op_type = %d , block.owner_name = %s , block.block_id = %d , block.content = \n%s\n",
 	datanode_req.op_type, datanode_req.block.owner_name, datanode_req.block.block_id, datanode_req.block.content);
-		send_data(datanode_socket, &datanode_req, sizeof(block));
+		send_data(datanode_socket, &datanode_req, sizeof(datanode_req));
 	}
 
 	fclose(file);
