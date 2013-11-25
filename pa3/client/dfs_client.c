@@ -61,8 +61,9 @@ printf("size of file = %d\n", size);
 	//TODO: Send blocks to datanodes one by one
 	dfs_cm_file_t file_desc = response.query_result;
 printf("blocknum = %d\n", file_desc.blocknum);
+printf("really\n");
 
-	int i;
+	int i = 0;
 	for (i = 0; i < file_desc.blocknum; i++)
 	{
 		dfs_cm_block_t block = file_desc.block_list[i];
