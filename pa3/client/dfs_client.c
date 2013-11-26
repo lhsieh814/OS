@@ -61,20 +61,15 @@ printf("size of file = %d\n", size);
 	//TODO: Send blocks to datanodes one by one
 	dfs_cm_file_t file_desc = response.query_result;
 printf("blocknum = %d\n", file_desc.blocknum);
-printf("really\n");
 
 	int i = 0;
 	for (i = 0; i < file_desc.blocknum; i++)
 	{
 		dfs_cm_block_t block = file_desc.block_list[i];
+
 printf("owner_name = %s , dn_id = %d , block_id = %d , loc_ip = %s , loc_port = %d \n", 
 	block.owner_name, block.dn_id, block.block_id, block.loc_ip, block.loc_port);
-//******************** HACK *********************	
-// memset(&block, '0', sizeof(block));
-// strcpy(block.owner_name, local_path);
-// block.loc_port = 50060;
-// strcpy(block.loc_ip, "127.0.0.1");		
-// block.block_id = 0;
+
 char *buf = (char *)malloc(sizeof(char)*DFS_BLOCK_SIZE);
 memset(buf, 0, sizeof(char)*DFS_BLOCK_SIZE);
 fread(buf, DFS_BLOCK_SIZE, 1, file);

@@ -88,6 +88,9 @@ int register_datanode(int heartbeat_socket)
 			//TODO: fill dnlist
 			//principle: a datanode with id of n should be filled in dnlist[n - 1] (n is always larger than 0)
 printf("Got status from datanode\n");
+			if (dnlist[datanode_status.datanode_id - 1] == NULL) {
+				dncnt ++;
+			}
 			dnlist[datanode_status.datanode_id - 1] = (dfs_datanode_t*)malloc(sizeof(dfs_datanode_t));
 			dfs_datanode_t* datanode = dnlist[datanode_status.datanode_id - 1];
 			memset(datanode, 0, sizeof(datanode));
@@ -98,10 +101,7 @@ printf("HERE\n");
 
 printf("datanode id = %d , port = %d\n", datanode->dn_id, datanode->port);
 
-			if (dnlist[datanode_status.datanode_id - 1] == NULL) {
-				dncnt ++;
-			}
-			//dnlist[datanode_status.datanode_id - 1] = &datanode;
+
 			
 			safeMode = 0;
 		}
