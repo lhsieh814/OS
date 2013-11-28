@@ -52,7 +52,7 @@ printf("*** push_file() ***\n");
 	int size = ftell(file);
 	fseek(file, 0L, SEEK_SET);
 printf("size of file = %d\n", size);	
-	request.file_size = sizeof(file);
+	request.file_size = size; //sizeof(file);
 	send_data(namenode_socket, &request, sizeof(request));
 
 	//TODO:Receive the response

@@ -156,4 +156,6 @@ printf("size = %d\n", size);
 		}
 	}	
 	printf("Received data\n");
+printf("***************************\n");	
+	
 }

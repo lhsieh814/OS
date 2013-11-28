@@ -150,6 +150,7 @@ printf("no entry for file - create new one\n");
 	int next_data_node_index = 0;
 
 	//TODO:Assign data blocks to datanodes, round-robin style (see the Documents)
+printf("request.file_size = %d\n", request.file_size);
 printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, first_unassigned_block_index);
 
 	int i;
