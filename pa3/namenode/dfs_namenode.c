@@ -156,9 +156,7 @@ printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, fi
 	int i;
 	for (i = 0; i < block_count; i++)
 	{
-		dfs_datanode_t* datanode = dnlist[next_data_node_index];
-
-		while (datanode == NULL)
+		while (dnlist[next_data_node_index] == NULL)
 		{
 			// increase index (round robin)
 			if (next_data_node_index == MAX_DATANODE_NUM-1) { 
@@ -168,8 +166,10 @@ printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, fi
 			}
 		}
 printf("i = %d , next_data_node_index = %d\n", i, next_data_node_index);
+		dfs_datanode_t* datanode = dnlist[next_data_node_index];
 
 		if (datanode != NULL) {
+printf("datanode dn_id = %d , port = %d\n", datanode->dn_id, datanode->port);			
 			// assign data block to datanode
 			dfs_cm_block_t block;
 			memset(&block, '0', sizeof(block));

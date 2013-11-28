@@ -74,7 +74,6 @@ printf("owner_name = %s , dn_id = %d , block_id = %d , loc_ip = %s , loc_port = 
 		char *buf = (char *)malloc(sizeof(char)*DFS_BLOCK_SIZE);
 		memset(buf, 0, sizeof(char)*DFS_BLOCK_SIZE);
 		fread(buf, DFS_BLOCK_SIZE, 1, file);
-		printf("buf = \n%s\n", buf);
 		strncpy(block.content, buf, DFS_BLOCK_SIZE);
 
 		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
@@ -129,7 +128,7 @@ printf("blocknum = %d\n", file_desc.blocknum);
 
 		char buffer[DFS_BLOCK_SIZE];
 		receive_data(datanode_socket, &buffer, sizeof(buffer));
-printf("-----> buffer from Datanode = \n%s\n", buffer);
+//printf("-----> buffer from Datanode = \n%s\n", buffer);
 
 		FILE *file = fopen(filename, "wb");
 		//TODO: resemble the received blocks into the complete file
