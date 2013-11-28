@@ -110,7 +110,7 @@ printf("*** pull_file() ***\n");
 	
 	dfs_cm_file_t file_desc = response.query_result;
 printf("blocknum = %d\n", file_desc.blocknum);
-
+	char complete_file[file_desc.file_size];
 	//TODO: Receive blocks from datanodes one by one
 	int i = 0;
 	for (i = 0; i < file_desc.blocknum; i++)
@@ -127,16 +127,16 @@ printf("blocknum = %d\n", file_desc.blocknum);
 		send_data(datanode_socket, &datanode_req, sizeof(datanode_req));
 
 		char buffer[DFS_BLOCK_SIZE];
+		
 		receive_data(datanode_socket, &buffer, sizeof(buffer));
-//printf("-----> buffer from Datanode = \n%s\n", buffer);
 
-		FILE *file = fopen(filename, "wb");
-		//TODO: resemble the received blocks into the complete file
-		fwrite(buffer, sizeof(char), sizeof(buffer), file);
-		fclose(file);
+		strcpy(complete_file + (i * DFS_BLOCK_SIZE), buffer);
 
 	}
-
+	FILE *file = fopen(filename, "wb");
+	//TODO: resemble the received blocks into the complete file
+	fwrite(complete_file, sizeof(char), sizeof(complete_file), file);
+	fclose(file);
 
 	return 0;
 }
