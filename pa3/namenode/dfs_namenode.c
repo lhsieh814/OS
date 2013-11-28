@@ -250,8 +250,68 @@ int get_file_update_point(int client_socket, dfs_cm_client_req_t request)
 		dfs_cm_file_res_t response;
 		//TODO: fill the response and send it back to the client
 		// Send back the data block assignments to the client
-		memset(&response, 0, sizeof(response));
+		int old_block_count = (file_image->file_size + (DFS_BLOCK_SIZE - 1)) / DFS_BLOCK_SIZE;
+		int new_block_count = (request.file_size + (DFS_BLOCK_SIZE - 1)) / DFS_BLOCK_SIZE;
+printf("old_block_count = %d , new_block_count = %d\n", old_block_count, new_block_count);
+		
+		if (new_block_count > old_block_count) 
+		{
+			// Assign datanodes for new blocks (round-robin)
+			int num_new_blocks = new_block_count - old_block_count;
+			int next_block_id = file_image->block_list[file_image->blocknum].block_id + 1;
+			int next_dn_id = file_image->block_list[(file_image->blocknum) - 1].dn_id + 1;
+printf("num_new_blocks = %d , next_block_id = %d , next_dn_id = %d\n", num_new_blocks, next_block_id, next_dn_id);
+		
+printf("old file size = %d, blocknum = %d\n", file_image->file_size, file_image->blocknum);			
+			file_image->file_size = request.file_size;
+			file_image->blocknum = new_block_count;
+printf("assigned new file size = %d, blocknum = %d\n", file_image->file_size, file_image->blocknum);
+
+			int i;
+			for (i = next_block_id; i < next_block_id + num_new_blocks; i++)
+			{
+				while (dnlist[next_dn_id - 1] == NULL)
+				{
+printf("NO\n");					
+					// increase index (round robin)
+					if (next_dn_id == MAX_DATANODE_NUM-1) { 
+						next_dn_id = 0;
+					} else {
+						next_dn_id++;
+					}
+				}
+
+				dfs_datanode_t* datanode = dnlist[next_dn_id];
+printf("HERE\n");
+				if (datanode != NULL)
+				{
+					dfs_cm_block_t block;
+					memset(&block, '0', sizeof(block));
+					strcpy(block.owner_name, request.file_name);
+					block.dn_id = datanode->dn_id;
+					strcpy(block.loc_ip, datanode->ip);
+					block.loc_port = datanode->port;
+					block.block_id = i; //Not sure where to get block_id
+printf("new block i = %d , owner_name = %s , dn_id , loc_ip = %s , loc_port = %d , block_id = %d\n",
+	i, block.owner_name, block.dn_id, block.loc_ip, block.loc_port, block.block_id);
+					
+					((*file_image).block_list)[i] = block;
+
+					// increase index (round robin)
+					if (next_dn_id == MAX_DATANODE_NUM) { 
+						next_dn_id = 0;
+					} else {
+						next_dn_id++;
+					}
+				}
+			}
+		}
+
 		//TODO: fill the response and send it back to the client
+		memset(&response, 0, sizeof(response));
+		response.query_result = (*file_image);
+
+		send_data(client_socket, &response, sizeof(response));
 		return 0;
 	}
 	//FILE NOT FOUND

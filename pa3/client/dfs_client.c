@@ -22,9 +22,16 @@ int modify_file(char *ip, int port, const char* filename, int file_size, int sta
 
 	//TODO:fill the request and send
 	dfs_cm_client_req_t request;
-	
+    memset(&request, '0', sizeof(request));
+    strcpy(request.file_name, filename);
+    request.req_type = 3;
+    request.file_size = file_size;
+
+	send_data(namenode_socket, &request, sizeof(request));
+
 	//TODO: receive the response
 	dfs_cm_file_res_t response;
+	receive_data(namenode_socket, &response, sizeof(response));
 
 	//TODO: send the updated block to the proper datanode
 
@@ -127,7 +134,7 @@ printf("blocknum = %d\n", file_desc.blocknum);
 		send_data(datanode_socket, &datanode_req, sizeof(datanode_req));
 
 		char buffer[DFS_BLOCK_SIZE];
-		
+
 		receive_data(datanode_socket, &buffer, sizeof(buffer));
 
 		strcpy(complete_file + (i * DFS_BLOCK_SIZE), buffer);
