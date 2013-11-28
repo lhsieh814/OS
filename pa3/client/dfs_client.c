@@ -44,6 +44,7 @@ int push_file(int namenode_socket, const char* local_path)
     memset(&request, '0', sizeof(request));
 
 	//TODO:fill the fields in request and 
+printf("*** push_file() ***\n");
 	request.req_type = 1;
 	strcpy(request.file_name, local_path);
 	// Get the size of the file
@@ -70,12 +71,11 @@ printf("blocknum = %d\n", file_desc.blocknum);
 printf("owner_name = %s , dn_id = %d , block_id = %d , loc_ip = %s , loc_port = %d \n", 
 	block.owner_name, block.dn_id, block.block_id, block.loc_ip, block.loc_port);
 
-char *buf = (char *)malloc(sizeof(char)*DFS_BLOCK_SIZE);
-memset(buf, 0, sizeof(char)*DFS_BLOCK_SIZE);
-fread(buf, DFS_BLOCK_SIZE, 1, file);
-printf("buf = \n%s\n", buf);
-strncpy(block.content, buf, DFS_BLOCK_SIZE);
-//***********************************************		
+		char *buf = (char *)malloc(sizeof(char)*DFS_BLOCK_SIZE);
+		memset(buf, 0, sizeof(char)*DFS_BLOCK_SIZE);
+		fread(buf, DFS_BLOCK_SIZE, 1, file);
+		printf("buf = \n%s\n", buf);
+		strncpy(block.content, buf, DFS_BLOCK_SIZE);
 
 		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
 
@@ -98,16 +98,47 @@ int pull_file(int namenode_socket, const char *filename)
 	assert(filename != NULL);
 
 	//TODO: fill the request, and send (read request)
+printf("*** pull_file() ***\n");
+
 	dfs_cm_client_req_t request;
+	strcpy(request.file_name, filename);
+	request.req_type = 0;
+	send_data(namenode_socket, &request, sizeof(request));
 
 	//TODO: Get the response
 	dfs_cm_file_res_t response;
+	receive_data(namenode_socket, &response, sizeof(response));
 	
+	dfs_cm_file_t file_desc = response.query_result;
+printf("blocknum = %d\n", file_desc.blocknum);
+
 	//TODO: Receive blocks from datanodes one by one
-	
-	FILE *file = fopen(filename, "wb");
-	//TODO: resemble the received blocks into the complete file
-	fclose(file);
+	int i = 0;
+	for (i = 0; i < file_desc.blocknum; i++)
+	{
+		dfs_cm_block_t block = file_desc.block_list[i];
+		
+		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
+
+		dfs_cli_dn_req_t datanode_req;
+		memset(&datanode_req, '0', sizeof(datanode_req));
+		datanode_req.op_type = 0; //Datanode read block to client
+		datanode_req.block = block;
+
+		send_data(datanode_socket, &datanode_req, sizeof(datanode_req));
+
+		char buffer[DFS_BLOCK_SIZE];
+		receive_data(datanode_socket, &buffer, sizeof(buffer));
+printf("-----> buffer from Datanode = \n%s\n", buffer);
+
+		FILE *file = fopen(filename, "wb");
+		//TODO: resemble the received blocks into the complete file
+		fwrite(buffer, sizeof(char), sizeof(buffer), file);
+		fclose(file);
+
+	}
+
+
 	return 0;
 }
 

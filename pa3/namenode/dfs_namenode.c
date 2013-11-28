@@ -94,7 +94,6 @@ printf("Got status from datanode\n");
 			dnlist[datanode_status.datanode_id - 1] = (dfs_datanode_t*)malloc(sizeof(dfs_datanode_t));
 			dfs_datanode_t* datanode = dnlist[datanode_status.datanode_id - 1];
 			memset(datanode, 0, sizeof(datanode));
-printf("HERE\n");
 			datanode->dn_id = datanode_status.datanode_id;
 			datanode->port = datanode_status.datanode_listen_port;
 			strcpy(datanode->ip, "127.0.0.1");
@@ -203,14 +202,21 @@ printf("next_data_node_index = %d\n", next_data_node_index);
 
 int get_file_location(int client_socket, dfs_cm_client_req_t request)
 {
+printf("get_file_location()\n");	
 	int i = 0;
 	for (i = 0; i < MAX_FILE_COUNT; ++i)
 	{
 		dfs_cm_file_t* file_image = file_images[i];
 		if (file_image == NULL) continue;
 		if (strcmp(file_image->filename, request.file_name) != 0) continue;
-		dfs_cm_file_res_t response;
+
 		//TODO: fill the response and send it back to the client
+		dfs_cm_file_res_t response;
+		memset(&response, 0, sizeof(response));
+		response.query_result = (*file_image);
+printf("blocknum = %d\n", file_image->blocknum);		
+
+		send_data(client_socket, &response, sizeof(response));
 
 		return 0;
 	}
