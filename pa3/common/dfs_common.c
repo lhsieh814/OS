@@ -112,12 +112,19 @@ void send_data(int socket, void* data, int size)
 	if (socket == INVALID_SOCKET) return;
 
 	//TODO: send data through socket
-	int n = write(socket, data, size);
-	if (n < 0) {
-		printf("ERROR sending data\n");
-	} else {
-		printf("Sent data\n");
+	int total = 0;
+	int left = size;
+	while (total < size) {
+		int n = write(socket, data + total, left);
+		printf("n = %d\n", n);
+		total += n;
+		left -= n;
+		if (n < 0) {
+			printf("ERROR sending data\n");
+		}
 	}
+	printf("Sent data\n");
+	printf("\tsend packet size = %d\n", size);
 }
 
 /**
@@ -133,10 +140,17 @@ void receive_data(int socket, void* data, int size)
 	if (socket == INVALID_SOCKET) return;
 	
 	//TODO: fetch data via socket
-	int n = read(socket, data, size);
-	if (n < 0) {
-		printf("ERROR receiving data\n");
-	} else {
-		printf("Received data\n");
-	}
+	int total = 0;
+	int left = size;
+	while (total < size) {
+		int n = read(socket, data + total, left);
+		printf("n = %d\n", n);
+		total += n;
+		left -= n;
+		if (n < 0) {
+			printf("ERROR receiving data\n");
+		}
+	}	
+	printf("Received data\n");
+	printf("\treceive packet size = %d\n", size);
 }
