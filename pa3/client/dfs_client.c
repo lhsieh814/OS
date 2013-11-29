@@ -34,6 +34,34 @@ int modify_file(char *ip, int port, const char* filename, int file_size, int sta
 	receive_data(namenode_socket, &response, sizeof(response));
 
 	//TODO: send the updated block to the proper datanode
+printf("blocknum = %d\n", response.query_result.blocknum);
+	int starting_block = start_addr/(DFS_BLOCK_SIZE - 1);
+	int num_new_blocks = (end_addr - start_addr)/(DFS_BLOCK_SIZE - 1);
+printf("start_block = %d , num_new_blocks = %d\n", starting_block, num_new_blocks);
+	int i;
+	for (i = starting_block; i < starting_block + num_new_blocks; i++)
+	{
+		dfs_cm_block_t block = response.query_result.block_list[i];
+
+printf("owner_name = %s , dn_id = %d , block_id = %d , loc_ip = %s , loc_port = %d \n", 
+	block.owner_name, block.dn_id, block.block_id, block.loc_ip, block.loc_port);
+
+		char *buf = (char *)malloc(sizeof(char)*DFS_BLOCK_SIZE);
+		memset(buf, 0, sizeof(char)*DFS_BLOCK_SIZE);
+		fseek(file, start_addr, SEEK_SET);
+		fread(buf, DFS_BLOCK_SIZE, 1, file);
+		strncpy(block.content, buf, DFS_BLOCK_SIZE);
+
+		int datanode_socket = connect_to_nn(block.loc_ip, block.loc_port);
+
+		dfs_cli_dn_req_t datanode_req;
+		memset(&datanode_req, '0', sizeof(datanode_req));
+		datanode_req.op_type = 1;
+		datanode_req.block = block;
+printf("-> Send data to datanode : op_type = %d , block.owner_name = %s , block.block_id = %d , block.content = \n%s\n",
+	datanode_req.op_type, datanode_req.block.owner_name, datanode_req.block.block_id, datanode_req.block.content);
+		send_data(datanode_socket, &datanode_req, sizeof(datanode_req));
+	}
 
 	fclose(file);
 	return 0;

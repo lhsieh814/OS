@@ -266,43 +266,51 @@ printf("old file size = %d, blocknum = %d\n", file_image->file_size, file_image-
 			file_image->file_size = request.file_size;
 			file_image->blocknum = new_block_count;
 printf("assigned new file size = %d, blocknum = %d\n", file_image->file_size, file_image->blocknum);
-
+printf("dnlist[0] = %d, %d | dnlist[1] = %d, %d\n", dnlist[0]->dn_id, dnlist[0]->port, dnlist[1]->dn_id, dnlist[1]->port);
+			int end_block = next_block_id + num_new_blocks;
+printf("end_block = %d\n", end_block);
 			int i;
-			for (i = next_block_id; i < next_block_id + num_new_blocks; i++)
+			for (i = next_block_id; i < end_block; i++)
 			{
-				while (dnlist[next_dn_id - 1] == NULL)
+				while (dnlist[next_block_id] == NULL)
 				{
 printf("NO\n");					
 					// increase index (round robin)
-					if (next_dn_id == MAX_DATANODE_NUM-1) { 
-						next_dn_id = 0;
+					if (next_block_id == MAX_DATANODE_NUM-1) { 
+						next_block_id = 0;
 					} else {
-						next_dn_id++;
+						next_block_id++;
 					}
 				}
-
-				dfs_datanode_t* datanode = dnlist[next_dn_id];
+printf("next_block_id = %d\n", next_block_id);
+				dfs_datanode_t* datanode = dnlist[next_block_id];
 printf("HERE\n");
 				if (datanode != NULL)
 				{
+printf("1\n");					
 					dfs_cm_block_t block;
+printf("2\n");					
 					memset(&block, '0', sizeof(block));
+printf("3\n");					
 					strcpy(block.owner_name, request.file_name);
+printf("4\n");					
 					block.dn_id = datanode->dn_id;
+printf("5\n");					
 					strcpy(block.loc_ip, datanode->ip);
+printf("6\n");					
 					block.loc_port = datanode->port;
+printf("7\n");					
 					block.block_id = i; //Not sure where to get block_id
-printf("new block i = %d , owner_name = %s , dn_id , loc_ip = %s , loc_port = %d , block_id = %d\n",
-	i, block.owner_name, block.dn_id, block.loc_ip, block.loc_port, block.block_id);
-					
+printf("8\n");										
 					((*file_image).block_list)[i] = block;
-
+printf("9\n");					
 					// increase index (round robin)
-					if (next_dn_id == MAX_DATANODE_NUM) { 
-						next_dn_id = 0;
+					if (next_block_id == MAX_DATANODE_NUM) { 
+						next_block_id = 0;
 					} else {
-						next_dn_id++;
+						next_block_id++;
 					}
+printf("10\n");					
 				}
 			}
 		}
