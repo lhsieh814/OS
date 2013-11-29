@@ -36,7 +36,7 @@ int test_case_1(char **argv, int op_type)
 	memset(buf, 0, DFS_BLOCK_SIZE);
 	memset(local_buf, 0, DFS_BLOCK_SIZE);
 	fread(buf, DFS_BLOCK_SIZE, 1, fp);
-	fread(local_buf, DFS_BLOCK_SIZE, 1, local_fp);	
+	fread(local_buf, DFS_BLOCK_SIZE, 1, local_fp);
 	if (memcmp(local_buf, buf, DFS_BLOCK_SIZE) != 0) 
 	{
 		ret = 1;
@@ -233,8 +233,14 @@ int test_case_6(char **argv, int op_type)
 
 int test_case_7(char **argv) 
 {
+	char **args = (char **) malloc(sizeof(char *) * 3);
+	args[0] = argv[0];
+	args[1] = argv[1];
+	args[2] = "local_file";
 	int r2 = test_case_2(argv, 1024);
+	args[2] = "local_file_medium";
 	int r6 = test_case_4(argv, 4096);
+	args[2] = "local_file_large";
 	int r8	= test_case_6(argv, 8192);
 	return r2 || r6 || r8;
 }
@@ -289,7 +295,7 @@ void append_data(char *out_file, int append_size)
 		fputc(c, fp);
 	}
 	fclose(fp);
-	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 7));
+	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 6));
 	sprintf(cmd, "cp %s %s_1", out_file, out_file);
 	system(cmd);
 	free(cmd);
@@ -306,7 +312,7 @@ void generate_data(char *out_file, int file_size)
 		fputc(c, fp);
 	}
 	fclose(fp);
-	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 7));
+	char *cmd = (char *) malloc(sizeof(char) * (strlen(out_file) * 2 + 6));
 	sprintf(cmd, "cp %s %s_1", out_file, out_file);
 	system(cmd);
 	free(cmd);
@@ -319,35 +325,25 @@ int main(int argc, char **argv)
 	char *result[2];
 	result[0] = "PASS";
 	result[1] = "FAILED";
-printf("--------------------------------------------------------------------------------\n");	
+	
 	printf("TEST CASE 0:%s\n", result[test_case_0(argv, 2)]);
 	//generate data
 	//can contact to single datanode
 	generate_data("local_file", 1024);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 1:%s\n", result[test_case_1(argv, 1)]);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 2:%s\n", result[test_case_2(argv, 0)]);
 	//can contact to two datanodes	
 	generate_data("local_file_medium", 4096);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 3:%s\n", result[test_case_3(argv, 1)]);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 4:%s\n", result[test_case_4(argv, 0)]);
 	//can handle chunk pieces
 	generate_data("local_file_large", 8192);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 5:%s\n", result[test_case_5(argv, 1)]);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 6:%s\n", result[test_case_6(argv, 0)]);
 	//check every file is stored correctly
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 7:%s\n", result[test_case_7(argv)]);
 	//modify the file
 	append_data("local_file", 1024);
-printf("--------------------------------------------------------------------------------\n");	
 	printf("TEST CASE 8:%s\n", result[test_case_8(argv, 3)]);
-printf("--------------------------------------------------------------------------------\n");	
-
 	return 0;
 }

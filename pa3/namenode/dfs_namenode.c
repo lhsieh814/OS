@@ -80,14 +80,14 @@ int register_datanode(int heartbeat_socket)
 		datanode_socket = accept(heartbeat_socket, (struct sockaddr*)&datanode_address, &datanode_address_length); 
 		assert(datanode_socket != INVALID_SOCKET);
 
-		dfs_cm_datanode_status_t datanode_status;
 		//TODO: receive datanode's status via datanode_socket
+		dfs_cm_datanode_status_t datanode_status;
 		receive_data(datanode_socket, &datanode_status, sizeof(datanode_status));
+
 		if (datanode_status.datanode_id < MAX_DATANODE_NUM)
 		{
 			//TODO: fill dnlist
 			//principle: a datanode with id of n should be filled in dnlist[n - 1] (n is always larger than 0)
-printf("Got status from datanode\n");
 			if (dnlist[datanode_status.datanode_id - 1] == NULL) {
 				dncnt ++;
 			}
@@ -98,10 +98,6 @@ printf("Got status from datanode\n");
 			datanode->port = datanode_status.datanode_listen_port;
 			strcpy(datanode->ip, "127.0.0.1");
 
-printf("datanode id = %d , port = %d\n", datanode->dn_id, datanode->port);
-
-
-			
 			safeMode = 0;
 		}
 		close(datanode_socket);
@@ -115,7 +111,7 @@ int get_file_receivers(int client_socket, dfs_cm_client_req_t request)
 
 	dfs_cm_file_t** end_file_image = file_images + MAX_FILE_COUNT;
 	dfs_cm_file_t** file_image = file_images;
-printf("dnlist[0] = %d, %d | dnlist[1] = %d, %d\n", dnlist[0]->dn_id, dnlist[0]->port, dnlist[1]->dn_id, dnlist[1]->port);
+
 	// Try to find if there is already an entry for that file
 	while (file_image != end_file_image)
 	{
@@ -126,8 +122,8 @@ printf("dnlist[0] = %d, %d | dnlist[1] = %d, %d\n", dnlist[0]->dn_id, dnlist[0]-
 	if (file_image == end_file_image)
 	{
 		// There is no entry for that file, find an empty location to create one
-printf("no entry for file - create new one\n");
 		file_image = file_images;
+
 		while (file_image != end_file_image)
 		{
 			if (*file_image == NULL) break;
@@ -150,9 +146,6 @@ printf("no entry for file - create new one\n");
 	int next_data_node_index = 0;
 
 	//TODO:Assign data blocks to datanodes, round-robin style (see the Documents)
-printf("request.file_size = %d\n", request.file_size);
-printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, first_unassigned_block_index);
-
 	int i;
 	for (i = 0; i < block_count; i++)
 	{
@@ -165,11 +158,10 @@ printf("block_count = %d , first_unassigned_block_index = %d\n", block_count, fi
 				next_data_node_index++;
 			}
 		}
-printf("i = %d , next_data_node_index = %d\n", i, next_data_node_index);
+
 		dfs_datanode_t* datanode = dnlist[next_data_node_index];
 
 		if (datanode != NULL) {
-printf("datanode dn_id = %d , port = %d\n", datanode->dn_id, datanode->port);			
 			// assign data block to datanode
 			dfs_cm_block_t block;
 			memset(&block, '0', sizeof(block));
@@ -187,7 +179,6 @@ printf("datanode dn_id = %d , port = %d\n", datanode->dn_id, datanode->port);
 			} else {
 				next_data_node_index++;
 			}
-printf("next_data_node_index = %d\n", next_data_node_index);
 		} 
 	}
 
@@ -203,7 +194,6 @@ printf("next_data_node_index = %d\n", next_data_node_index);
 
 int get_file_location(int client_socket, dfs_cm_client_req_t request)
 {
-printf("get_file_location()\n");	
 	int i = 0;
 	for (i = 0; i < MAX_FILE_COUNT; ++i)
 	{
@@ -215,7 +205,6 @@ printf("get_file_location()\n");
 		dfs_cm_file_res_t response;
 		memset(&response, 0, sizeof(response));
 		response.query_result = (*file_image);
-printf("blocknum = %d\n", file_image->blocknum);		
 
 		send_data(client_socket, &response, sizeof(response));
 
@@ -232,7 +221,6 @@ void get_system_information(int client_socket, dfs_cm_client_req_t request)
 	//TODO:fill the response and send back to the client
 	dfs_system_status response;
 	response.datanode_num = dncnt;
-printf("num of datanodes = %d\n", dncnt);
 	memcpy(response.datanodes, dnlist, MAX_DATANODE_NUM * sizeof(dfs_datanode_t));
 
 	send_data(client_socket, &response, sizeof(response));
@@ -248,11 +236,11 @@ int get_file_update_point(int client_socket, dfs_cm_client_req_t request)
 		if (file_image == NULL) continue;
 		if (strcmp(file_image->filename, request.file_name) != 0) continue;
 		dfs_cm_file_res_t response;
+
 		//TODO: fill the response and send it back to the client
 		// Send back the data block assignments to the client
 		int old_block_count = (file_image->file_size + (DFS_BLOCK_SIZE - 1)) / DFS_BLOCK_SIZE;
 		int new_block_count = (request.file_size + (DFS_BLOCK_SIZE - 1)) / DFS_BLOCK_SIZE;
-printf("old_block_count = %d , new_block_count = %d\n", old_block_count, new_block_count);
 		
 		if (new_block_count > old_block_count) 
 		{
@@ -260,21 +248,16 @@ printf("old_block_count = %d , new_block_count = %d\n", old_block_count, new_blo
 			int num_new_blocks = new_block_count - old_block_count;
 			int next_block_id = file_image->block_list[file_image->blocknum].block_id + 1;
 			int next_dn_id = file_image->block_list[(file_image->blocknum) - 1].dn_id + 1;
-printf("num_new_blocks = %d , next_block_id = %d , next_dn_id = %d\n", num_new_blocks, next_block_id, next_dn_id);
-		
-printf("old file size = %d, blocknum = %d\n", file_image->file_size, file_image->blocknum);			
+			int end_block = next_block_id + num_new_blocks;
+
 			file_image->file_size = request.file_size;
 			file_image->blocknum = new_block_count;
-printf("assigned new file size = %d, blocknum = %d\n", file_image->file_size, file_image->blocknum);
-printf("dnlist[0] = %d, %d | dnlist[1] = %d, %d\n", dnlist[0]->dn_id, dnlist[0]->port, dnlist[1]->dn_id, dnlist[1]->port);
-			int end_block = next_block_id + num_new_blocks;
-printf("end_block = %d\n", end_block);
+			
 			int i;
 			for (i = next_block_id; i < end_block; i++)
 			{
 				while (dnlist[next_block_id] == NULL)
 				{
-printf("NO\n");					
 					// increase index (round robin)
 					if (next_block_id == MAX_DATANODE_NUM-1) { 
 						next_block_id = 0;
@@ -282,35 +265,26 @@ printf("NO\n");
 						next_block_id++;
 					}
 				}
-printf("next_block_id = %d\n", next_block_id);
+
 				dfs_datanode_t* datanode = dnlist[next_block_id];
-printf("HERE\n");
+
 				if (datanode != NULL)
 				{
-printf("1\n");					
 					dfs_cm_block_t block;
-printf("2\n");					
 					memset(&block, '0', sizeof(block));
-printf("3\n");					
 					strcpy(block.owner_name, request.file_name);
-printf("4\n");					
-					block.dn_id = datanode->dn_id;
-printf("5\n");					
-					strcpy(block.loc_ip, datanode->ip);
-printf("6\n");					
-					block.loc_port = datanode->port;
-printf("7\n");					
-					block.block_id = i; //Not sure where to get block_id
-printf("8\n");										
-					((*file_image).block_list)[i] = block;
-printf("9\n");					
+					block.dn_id = datanode->dn_id;			
+					strcpy(block.loc_ip, datanode->ip);				
+					block.loc_port = datanode->port;				
+					block.block_id = i;									
+					((*file_image).block_list)[i] = block;	
+
 					// increase index (round robin)
 					if (next_block_id == MAX_DATANODE_NUM) { 
 						next_block_id = 0;
 					} else {
 						next_block_id++;
-					}
-printf("10\n");					
+					}				
 				}
 			}
 		}

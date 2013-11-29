@@ -53,6 +53,7 @@ static void *heartbeat()
 		//Where port 50030 is my chosen port for heartbeat
 		heartbeat_socket = create_client_tcp_socket("127.0.0.1", 50030);	
 		assert(heartbeat_socket != INVALID_SOCKET);
+
 		//send datanode_status to namenode
 		send_data(heartbeat_socket, &datanode_status, sizeof(datanode_status));
 
@@ -91,7 +92,6 @@ int read_block(int client_socket, const dfs_cli_dn_req_t *request)
 	ext_read_block(request->block.owner_name, request->block.block_id, (void *)buffer);
 
 	//TODO:response the client with the data
-printf("datanode read block()\n");	
 	send_data(client_socket, &buffer, sizeof(buffer));
 
 	return 0;
@@ -99,17 +99,12 @@ printf("datanode read block()\n");
 
 int create_block(const dfs_cli_dn_req_t* request)
 {
-printf("%s\n", working_directory);
-printf("block_id = %d\n", request->block.block_id);
-printf("content = \n%s\n", request->block.content);
 	int i = ext_write_block(request->block.owner_name, request->block.block_id, (void *)request->block.content);
-printf("i = %d\n", i);	
 	return 0;
 }
 
 void requests_dispatcher(int client_socket, dfs_cli_dn_req_t request)
 {
-printf("datanode op = %d\n", request.op_type);
 	switch (request.op_type)
 	{
 		case 0:
